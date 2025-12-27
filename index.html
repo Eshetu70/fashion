@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion Boutique - Shop Cultural & Modern Clothing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: #dfe6e9;
+        }
+
+        .cart-icon {
+            position: relative;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23dfe6e9" width="1200" height="600"/></svg>');
+            background-size: cover;
+            color: white;
+            padding: 8rem 2rem 6rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-bottom: 2px solid #ddd;
+            position: sticky;
+            top: 70px;
+            z-index: 999;
+        }
+
+        .filter-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #2d3436;
+            background: white;
+            color: #2d3436;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: #2d3436;
+            color: white;
+        }
+
+        /* Products Grid */
+        .products-section {
+            max-width: 1400px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 800;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 350px;
+            background: linear-gradient(135deg, #dfe6e9 0%, #b2bec3 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-details {
+            padding: 1.5rem;
+        }
+
+        .product-category {
+            font-size: 0.85rem;
+            color: #636e72;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #2d3436;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #e74c3c;
+            margin-bottom: 1rem;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #2d3436;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .add-to-cart-btn:hover {
+            background: #000;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            max-width: 800px;
+            margin: 3rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .admin-panel h2 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #2d3436;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2d3436;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2d3436;
+        }
+
+        .btn-primary {
+            padding: 1rem 2rem;
+            background: #2d3436;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #000;
+        }
+
+        /* Cart Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .cart-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #ddd;
+            align-items: center;
+        }
+
+        .cart-item-image {
+            width: 80px;
+            height: 80px;
+            background: #dfe6e9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .cart-item-details {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .cart-item-price {
+            color: #e74c3c;
+            font-weight: 700;
+        }
+
+        .remove-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .cart-total {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-align: right;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid #2d3436;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        /* Product Management */
+        .product-management {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .product-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .product-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .product-item-image {
+            width: 100px;
+            height: 100px;
+            background: #dfe6e9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .product-item-details {
+            flex: 1;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-edit {
+            padding: 0.5rem 1rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-delete {
+            padding: 0.5rem 1rem;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .close-modal {
+            float: right;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #636e72;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #2d3436;
+            border-bottom-color: #2d3436;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+
+            .filter-container {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="#" class="logo">👗 Fashion Boutique</a>
+            <ul class="nav-menu">
+                <li><a href="#" onclick="showTab('shop')">Shop</a></li>
+                <li><a href="#" onclick="showTab('admin')">Admin</a></li>
+                <li>
+                    <div class="cart-icon" onclick="toggleCart()">
+                        🛒
+                        <span class="cart-count" id="cartCount">0</span>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Discover Your Style</h1>
+        <p>Cultural & Modern Fashion for Everyone</p>
+    </section>
+
+    <!-- Main Content Tabs -->
+    <div style="max-width: 1400px; margin: 2rem auto; padding: 0 2rem;">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('shop')">🛍️ Shop</button>
+            <button class="tab" onclick="showTab('admin')">⚙️ Admin Panel</button>
+            <button class="tab" onclick="showTab('manage')">📦 Manage Products</button>
+        </div>
+
+        <!-- Shop Tab -->
+        <div id="shop" class="tab-content active">
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-container">
+                    <button class="filter-btn active" onclick="filterProducts('all')">All</button>
+                    <button class="filter-btn" onclick="filterProducts('cultural')">Cultural Clothes</button>
+                    <button class="filter-btn" onclick="filterProducts('tshirt')">T-Shirts</button>
+                    <button class="filter-btn" onclick="filterProducts('men')">Men</button>
+                    <button class="filter-btn" onclick="filterProducts('women')">Women</button>
+                    <button class="filter-btn" onclick="filterProducts('kids')">Kids</button>
+                </div>
+            </div>
+
+            <!-- Products Section -->
+            <div class="products-section">
+                <h2 class="section-title">Featured Products</h2>
+                <div class="products-grid" id="productsGrid"></div>
+            </div>
+        </div>
+
+        <!-- Admin Panel Tab -->
+        <div id="admin" class="tab-content">
+            <div class="admin-panel">
+                <h2>Add New Product</h2>
+                <form id="productForm">
+                    <div class="form-group">
+                        <label for="productName">Product Name</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productCategory">Category</label>
+                        <select id="productCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="cultural">Cultural Clothes</option>
+                            <option value="tshirt">T-Shirt</option>
+                            <option value="dress">Dress</option>
+                            <option value="jeans">Jeans</option>
+                            <option value="accessories">Accessories</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="productGender">Gender</label>
+                        <select id="productGender" required>
+                            <option value="">Select Gender</option>
+                            <option value="men">Men</option>
+                            <option value="women">Women</option>
+                            <option value="kids">Kids</option>
+                            <option value="unisex">Unisex</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="productPrice">Price ($)</label>
+                        <input type="number" id="productPrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productDescription">Description</label>
+                        <textarea id="productDescription" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="productImage">Product Image URL (or emoji)</label>
+                        <input type="text" id="productImage" placeholder="Enter image URL or emoji like 👕">
+                    </div>
+                    <button type="submit" class="btn-primary">Add Product</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Manage Products Tab -->
+        <div id="manage" class="tab-content">
+            <div class="product-management">
+                <h2 class="section-title">Manage Products</h2>
+                <div class="product-list" id="productList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="toggleCart()">&times;</span>
+            <h2>Shopping Cart</h2>
+            <div id="cartItems"></div>
+            <div class="cart-total">Total: $<span id="cartTotal">0.00</span></div>
+            <button class="checkout-btn" onclick="checkout()">Proceed to Checkout</button>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Product</h2>
+            <form id="editForm">
+                <input type="hidden" id="editProductId">
+                <div class="form-group">
+                    <label for="editProductName">Product Name</label>
+                    <input type="text" id="editProductName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editProductCategory">Category</label>
+                    <select id="editProductCategory" required>
+                        <option value="cultural">Cultural Clothes</option>
+                        <option value="tshirt">T-Shirt</option>
+                        <option value="dress">Dress</option>
+                        <option value="jeans">Jeans</option>
+                        <option value="accessories">Accessories</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editProductGender">Gender</label>
+                    <select id="editProductGender" required>
+                        <option value="men">Men</option>
+                        <option value="women">Women</option>
+                        <option value="kids">Kids</option>
+                        <option value="unisex">Unisex</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editProductPrice">Price ($)</label>
+                    <input type="number" id="editProductPrice" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="editProductDescription">Description</label>
+                    <textarea id="editProductDescription" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editProductImage">Product Image</label>
+                    <input type="text" id="editProductImage">
+                </div>
+                <button type="submit" class="btn-primary">Update Product</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Products stored in memory (in a real app, this would be in a database)
+        let products = [
+            {
+                id: 1,
+                name: "Traditional Kaftan",
+                category: "cultural",
+                gender: "women",
+                price: 89.99,
+                description: "Beautiful traditional kaftan with intricate embroidery",
+                image: "👘"
+            },
+            {
+                id: 2,
+                name: "Classic White T-Shirt",
+                category: "tshirt",
+                gender: "unisex",
+                price: 19.99,
+                description: "Comfortable cotton t-shirt",
+                image: "👕"
+            },
+            {
+                id: 3,
+                name: "Designer Kurta",
+                category: "cultural",
+                gender: "men",
+                price: 79.99,
+                description: "Elegant kurta for special occasions",
+                image: "🥻"
+            },
+            {
+                id: 4,
+                name: "Summer Dress",
+                category: "dress",
+                gender: "women",
+                price: 59.99,
+                description: "Light and breezy summer dress",
+                image: "👗"
+            },
+            {
+                id: 5,
+                name: "Kids Casual Outfit",
+                category: "tshirt",
+                gender: "kids",
+                price: 29.99,
+                description: "Comfortable outfit for kids",
+                image: "👶"
+            }
+        ];
+
+        let cart = [];
+        let currentFilter = 'all';
+        let nextId = 6;
+
+        // Initialize
+        renderProducts();
+        updateCartCount();
+
+        // Tab Management
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'manage') {
+                renderProductList();
+            }
+        }
+
+        // Filter Products
+        function filterProducts(category) {
+            currentFilter = category;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderProducts();
+        }
+
+        // Render Products
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            let filteredProducts = products;
+
+            if (currentFilter !== 'all') {
+                filteredProducts = products.filter(p => 
+                    p.category === currentFilter || p.gender === currentFilter
+                );
+            }
+
+            grid.innerHTML = filteredProducts.map(product => `
+                <div class="product-card">
+                    <div class="product-image">
+                        ${product.image.startsWith('http') ? 
+                            `<img src="${product.image}" alt="${product.name}">` : 
+                            product.image
+                        }
+                    </div>
+                    <div class="product-details">
+                        <div class="product-category">${product.category} • ${product.gender}</div>
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-price">$${product.price.toFixed(2)}</div>
+                        <button class="add-to-cart-btn" onclick="addToCart(${product.id})">
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Add Product (Admin)
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newProduct = {
+                id: nextId++,
+                name: document.getElementById('productName').value,
+                category: document.getElementById('productCategory').value,
+                gender: document.getElementById('productGender').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                description: document.getElementById('productDescription').value,
+                image: document.getElementById('productImage').value || '👔'
+            };
+
+            products.push(newProduct);
+            renderProducts();
+            this.reset();
+            alert('Product added successfully!');
+        });
+
+        // Cart Functions
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            cart.push(product);
+            updateCartCount();
+            alert('Added to cart!');
+        }
+
+        function updateCartCount() {
+            document.getElementById('cartCount').textContent = cart.length;
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cartModal');
+            modal.classList.toggle('active');
+            if (modal.classList.contains('active')) {
+                renderCart();
+            }
+        }
+
+        function renderCart() {
+            const cartItems = document.getElementById('cartItems');
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+
+            cartItems.innerHTML = cart.map((item, index) => `
+                <div class="cart-item">
+                    <div class="cart-item-image">${item.image}</div>
+                    <div class="cart-item-details">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                    </div>
+                    <button class="remove-btn" onclick="removeFromCart(${index})">Remove</button>
+                </div>
+            `).join('');
+
+            document.getElementById('cartTotal').textContent = total.toFixed(2);
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartCount();
+            renderCart();
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            alert(`Thank you for your purchase! Total: $${total.toFixed(2)}\n\nOrder will be processed shortly.`);
+            cart = [];
+            updateCartCount();
+            toggleCart();
+        }
+
+        // Product Management
+        function renderProductList() {
+            const list = document.getElementById('productList');
+            list.innerHTML = products.map(product => `
+                <div class="product-item">
+                    <div class="product-item-image">
+                        ${product.image.startsWith('http') ? 
+                            `<img src="${product.image}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : 
+                            product.image
+                        }
+                    </div>
+                    <div class="product-item-details">
+                        <h3>${product.name}</h3>
+                        <p><strong>Category:</strong> ${product.category} | <strong>Gender:</strong> ${product.gender}</p>
+                        <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
+                        <p>${product.description}</p>
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn-edit" onclick="editProduct(${product.id})">Edit</button>
+                        <button class="btn-delete" onclick="deleteProduct(${product.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function editProduct(id) {
+            const product = products.find(p => p.id === id);
+            document.getElementById('editProductId').value = product.id;
+            document.getElementById('editProductName').value = product.name;
+            document.getElementById('editProductCategory').value = product.category;
+            document.getElementById('editProductGender').value = product.gender;
+            document.getElementById('editProductPrice').value = product.price;
+            document.getElementById('editProductDescription').value = product.description;
+            document.getElementById('editProductImage').value = product.image;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('editProductId').value);
+            const productIndex = products.findIndex(p => p.id === id);
+            
+            products[productIndex] = {
+                id: id,
+                name: document.getElementById('editProductName').value,
+                category: document.getElementById('editProductCategory').value,
+                gender: document.getElementById('editProductGender').value,
+                price: parseFloat(document.getElementById('editProductPrice').value),
+                description: document.getElementById('editProductDescription').value,
+                image: document.getElementById('editProductImage').value
+            };
+
+            renderProducts();
+            renderProductList();
+            closeEditModal();
+            alert('Product updated successfully!');
+        });
+
+        function deleteProduct(id) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                products = products.filter(p => p.id !== id);
+                renderProducts();
+                renderProductList();
+                alert('Product deleted successfully!');
+            }
+        }
+    </script>
+</body>
+</html>
