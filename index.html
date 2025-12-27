@@ -1,936 +1,1262 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fashion Boutique - Shop Cultural & Modern Clothing</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #1a1a1a;
-        }
-
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
-            color: white;
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .logo {
-            font-size: 2rem;
-            font-weight: 800;
-            color: white;
-            text-decoration: none;
-            letter-spacing: 1px;
-        }
-
-        .nav-menu {
-            display: flex;
-            list-style: none;
-            gap: 2rem;
-            align-items: center;
-        }
-
-        .nav-menu a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            color: #dfe6e9;
-        }
-
-        .cart-icon {
-            position: relative;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .cart-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #e74c3c;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)), 
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23dfe6e9" width="1200" height="600"/></svg>');
-            background-size: cover;
-            color: white;
-            padding: 8rem 2rem 6rem;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            font-weight: 800;
-        }
-
-        .hero p {
-            font-size: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        /* Filter Section */
-        .filter-section {
-            background: #f8f9fa;
-            padding: 2rem;
-            border-bottom: 2px solid #ddd;
-            position: sticky;
-            top: 70px;
-            z-index: 999;
-        }
-
-        .filter-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            padding: 0.8rem 1.5rem;
-            border: 2px solid #2d3436;
-            background: white;
-            color: #2d3436;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .filter-btn:hover,
-        .filter-btn.active {
-            background: #2d3436;
-            color: white;
-        }
-
-        /* Products Grid */
-        .products-section {
-            max-width: 1400px;
-            margin: 3rem auto;
-            padding: 0 2rem;
-        }
-
-        .section-title {
-            font-size: 2.5rem;
-            margin-bottom: 2rem;
-            text-align: center;
-            font-weight: 800;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .product-card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .product-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-
-        .product-image {
-            width: 100%;
-            height: 350px;
-            background: linear-gradient(135deg, #dfe6e9 0%, #b2bec3 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 5rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .product-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .product-details {
-            padding: 1.5rem;
-        }
-
-        .product-category {
-            font-size: 0.85rem;
-            color: #636e72;
-            text-transform: uppercase;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .product-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: #2d3436;
-        }
-
-        .product-price {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: #e74c3c;
-            margin-bottom: 1rem;
-        }
-
-        .add-to-cart-btn {
-            width: 100%;
-            padding: 1rem;
-            background: #2d3436;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .add-to-cart-btn:hover {
-            background: #000;
-        }
-
-        /* Admin Panel */
-        .admin-panel {
-            max-width: 800px;
-            margin: 3rem auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
-
-        .admin-panel h2 {
-            font-size: 2rem;
-            margin-bottom: 2rem;
-            color: #2d3436;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #2d3436;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.8rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #2d3436;
-        }
-
-        .btn-primary {
-            padding: 1rem 2rem;
-            background: #2d3436;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary:hover {
-            background: #000;
-        }
-
-        /* Cart Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 20px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .cart-item {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-            border-bottom: 1px solid #ddd;
-            align-items: center;
-        }
-
-        .cart-item-image {
-            width: 80px;
-            height: 80px;
-            background: #dfe6e9;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
-
-        .cart-item-details {
-            flex: 1;
-        }
-
-        .cart-item-name {
-            font-weight: 700;
-            margin-bottom: 0.3rem;
-        }
-
-        .cart-item-price {
-            color: #e74c3c;
-            font-weight: 700;
-        }
-
-        .remove-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .cart-total {
-            font-size: 1.5rem;
-            font-weight: 800;
-            text-align: right;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 2px solid #2d3436;
-        }
-
-        .checkout-btn {
-            width: 100%;
-            padding: 1.2rem;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1.2rem;
-            cursor: pointer;
-            margin-top: 1rem;
-        }
-
-        /* Product Management */
-        .product-management {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        .product-list {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .product-item {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
-        }
-
-        .product-item-image {
-            width: 100px;
-            height: 100px;
-            background: #dfe6e9;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-        }
-
-        .product-item-details {
-            flex: 1;
-        }
-
-        .product-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-edit {
-            padding: 0.5rem 1rem;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .btn-delete {
-            padding: 0.5rem 1rem;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .close-modal {
-            float: right;
-            font-size: 2rem;
-            cursor: pointer;
-            line-height: 1;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 2px solid #ddd;
-        }
-
-        .tab {
-            padding: 1rem 2rem;
-            background: none;
-            border: none;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #636e72;
-            transition: all 0.3s;
-        }
-
-        .tab.active {
-            color: #2d3436;
-            border-bottom-color: #2d3436;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .products-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            }
-
-            .filter-container {
-                justify-content: center;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fashion Boutique - Professional Online Shopping</title>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
+      color: white;
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .nav-menu {
+      display: flex;
+      list-style: none;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .nav-menu a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .cart-icon {
+      position: relative;
+      font-size: 1.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cart-count {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #e74c3c;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero {
+      background:
+        linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)),
+        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23667eea" width="1200" height="600"/></svg>');
+      background-size: cover;
+      color: white;
+      padding: 6rem 2rem 4rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+      font-weight: 800;
+    }
+
+    .filter-section {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .filter-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.7rem 1.3rem;
+      border: 2px solid #2d3436;
+      background: white;
+      color: #2d3436;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .filter-btn.active {
+      background: #2d3436;
+      color: white;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2rem;
+      max-width: 1400px;
+      margin: 3rem auto;
+      padding: 0 2rem;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+    }
+
+    .product-card:hover { transform: translateY(-10px); }
+
+    .product-image {
+      width: 100%;
+      height: 320px;
+      overflow: hidden;
+    }
+
+    .product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .product-details { padding: 1.5rem; }
+
+    .product-category {
+      font-size: 0.85rem;
+      color: #636e72;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .product-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+
+    .product-price {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #e74c3c;
+      margin-bottom: 1rem;
+    }
+
+    .add-to-cart-btn {
+      width: 100%;
+      padding: 0.9rem;
+      background: #2d3436;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    .modal.active { display: flex; }
+
+    .modal-content {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 20px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .close-modal { font-size: 2rem; cursor: pointer; user-select:none; }
+
+    .cart-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-bottom: 1px solid #ddd;
+      align-items: center;
+    }
+
+    .cart-item-image {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .cart-item-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .remove-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .cart-total {
+      font-size: 1.8rem;
+      font-weight: 800;
+      text-align: right;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid #2d3436;
+    }
+
+    .form-group { margin-bottom: 1.5rem; }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.9rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 1.2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    .btn-success {
+      width: 100%;
+      padding: 1.2rem;
+      background: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+
+    .checkout-steps {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      gap: 0.75rem;
+    }
+
+    .step {
+      flex: 1;
+      text-align: center;
+      padding: 1rem;
+      border-bottom: 3px solid #ddd;
+      color: #636e72;
+      font-weight: 600;
+    }
+
+    .step.active { border-bottom-color: #667eea; color: #667eea; }
+    .step.completed { border-bottom-color: #27ae60; color: #27ae60; }
+
+    .payment-option {
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .payment-option.selected {
+      border-color: #667eea;
+      background: #f0f3ff;
+    }
+
+    .order-summary {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.8rem;
+      font-size: 1.1rem;
+    }
+
+    .summary-row.total {
+      font-size: 1.4rem;
+      font-weight: 800;
+      padding-top: 1rem;
+      border-top: 2px solid #ddd;
+    }
+
+    .hidden { display: none !important; }
+
+    .admin-panel {
+      max-width: 800px;
+      margin: 3rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .image-upload-area {
+      border: 3px dashed #ddd;
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .image-preview {
+      max-width: 100%;
+      max-height: 300px;
+      margin-top: 1rem;
+      border-radius: 8px;
+    }
+
+    .success-icon {
+      font-size: 5rem;
+      color: #27ae60;
+    }
+
+    .login-modal {
+      background: white;
+      padding: 3rem;
+      border-radius: 20px;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .login-modal h2 { margin-bottom: 2rem; color: #2d3436; }
+
+    .product-list { margin-top: 2rem; }
+
+    .product-item {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .product-item-image {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .product-item-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .product-item-details { flex: 1; }
+
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      font-size: 1.2rem;
+      color: #636e72;
+    }
+
+    @media (max-width: 768px) {
+      .form-row { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 2.3rem; }
+      .modal-content { padding: 1.5rem; }
+      .login-modal { padding: 2rem; }
+    }
+  </style>
 </head>
+
 <body>
-    <!-- Header -->
-    <header class="header">
-        <nav class="nav-container">
-            <a href="#" class="logo">👗 Fashion Boutique</a>
-            <ul class="nav-menu">
-                <li><a href="#" onclick="showTab('shop')">Shop</a></li>
-                <li><a href="#" onclick="showTab('admin')">Admin</a></li>
-                <li>
-                    <div class="cart-icon" onclick="toggleCart()">
-                        🛒
-                        <span class="cart-count" id="cartCount">0</span>
-                    </div>
-                </li>
-            </ul>
-        </nav>
-    </header>
+  <header class="header">
+    <nav class="nav-container">
+      <a class="logo" onclick="showShop()">👗 Fashion Boutique</a>
+      <ul class="nav-menu">
+        <li><a onclick="showShop()">Shop</a></li>
+        <li id="adminLink"><a onclick="promptAdminLogin()">Admin</a></li>
+        <li>
+          <div class="cart-icon" onclick="openCart()">
+            🛒 <span class="cart-count" id="cartCount">0</span>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <h1>Discover Your Style</h1>
-        <p>Cultural & Modern Fashion for Everyone</p>
-    </section>
+  <section class="hero">
+    <h1>Discover Your Perfect Style</h1>
+    <p>Premium Fashion Collection - Cultural & Modern Clothing</p>
+  </section>
 
-    <!-- Main Content Tabs -->
-    <div style="max-width: 1400px; margin: 2rem auto; padding: 0 2rem;">
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('shop')">🛍️ Shop</button>
-            <button class="tab" onclick="showTab('admin')">⚙️ Admin Panel</button>
-            <button class="tab" onclick="showTab('manage')">📦 Manage Products</button>
-        </div>
-
-        <!-- Shop Tab -->
-        <div id="shop" class="tab-content active">
-            <!-- Filter Section -->
-            <div class="filter-section">
-                <div class="filter-container">
-                    <button class="filter-btn active" onclick="filterProducts('all')">All</button>
-                    <button class="filter-btn" onclick="filterProducts('cultural')">Cultural Clothes</button>
-                    <button class="filter-btn" onclick="filterProducts('tshirt')">T-Shirts</button>
-                    <button class="filter-btn" onclick="filterProducts('men')">Men</button>
-                    <button class="filter-btn" onclick="filterProducts('women')">Women</button>
-                    <button class="filter-btn" onclick="filterProducts('kids')">Kids</button>
-                </div>
-            </div>
-
-            <!-- Products Section -->
-            <div class="products-section">
-                <h2 class="section-title">Featured Products</h2>
-                <div class="products-grid" id="productsGrid"></div>
-            </div>
-        </div>
-
-        <!-- Admin Panel Tab -->
-        <div id="admin" class="tab-content">
-            <div class="admin-panel">
-                <h2>Add New Product</h2>
-                <form id="productForm">
-                    <div class="form-group">
-                        <label for="productName">Product Name</label>
-                        <input type="text" id="productName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="productCategory">Category</label>
-                        <select id="productCategory" required>
-                            <option value="">Select Category</option>
-                            <option value="cultural">Cultural Clothes</option>
-                            <option value="tshirt">T-Shirt</option>
-                            <option value="dress">Dress</option>
-                            <option value="jeans">Jeans</option>
-                            <option value="accessories">Accessories</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="productGender">Gender</label>
-                        <select id="productGender" required>
-                            <option value="">Select Gender</option>
-                            <option value="men">Men</option>
-                            <option value="women">Women</option>
-                            <option value="kids">Kids</option>
-                            <option value="unisex">Unisex</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="productPrice">Price ($)</label>
-                        <input type="number" id="productPrice" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="productDescription">Description</label>
-                        <textarea id="productDescription" rows="4"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="productImage">Product Image URL (or emoji)</label>
-                        <input type="text" id="productImage" placeholder="Enter image URL or emoji like 👕">
-                    </div>
-                    <button type="submit" class="btn-primary">Add Product</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Manage Products Tab -->
-        <div id="manage" class="tab-content">
-            <div class="product-management">
-                <h2 class="section-title">Manage Products</h2>
-                <div class="product-list" id="productList"></div>
-            </div>
-        </div>
+  <div class="filter-section" id="shopSection">
+    <div class="filter-container">
+      <button class="filter-btn active" onclick="filterProducts('all', this)">All</button>
+      <button class="filter-btn" onclick="filterProducts('cultural', this)">Cultural</button>
+      <button class="filter-btn" onclick="filterProducts('tshirt', this)">T-Shirts</button>
+      <button class="filter-btn" onclick="filterProducts('men', this)">Men</button>
+      <button class="filter-btn" onclick="filterProducts('women', this)">Women</button>
     </div>
+  </div>
 
-    <!-- Cart Modal -->
-    <div id="cartModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="toggleCart()">&times;</span>
-            <h2>Shopping Cart</h2>
-            <div id="cartItems"></div>
-            <div class="cart-total">Total: $<span id="cartTotal">0.00</span></div>
-            <button class="checkout-btn" onclick="checkout()">Proceed to Checkout</button>
+  <div id="loadingProducts" class="loading">Loading products...</div>
+  <div class="products-grid" id="productsGrid"></div>
+
+  <!-- ADMIN SECTION -->
+  <div id="adminSection" class="hidden">
+    <div class="admin-panel">
+      <h2 style="margin-bottom: 2rem;">Add New Product</h2>
+      <form id="productForm">
+        <div class="form-group">
+          <div class="image-upload-area" onclick="document.getElementById('imageInput').click()">
+            <p>📷 Upload Image</p>
+            <input type="file" id="imageInput" accept="image/*" style="display:none;">
+            <img id="imagePreview" class="image-preview hidden" alt="Preview">
+          </div>
         </div>
-    </div>
 
-    <!-- Edit Product Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeEditModal()">&times;</span>
-            <h2>Edit Product</h2>
-            <form id="editForm">
-                <input type="hidden" id="editProductId">
-                <div class="form-group">
-                    <label for="editProductName">Product Name</label>
-                    <input type="text" id="editProductName" required>
-                </div>
-                <div class="form-group">
-                    <label for="editProductCategory">Category</label>
-                    <select id="editProductCategory" required>
-                        <option value="cultural">Cultural Clothes</option>
-                        <option value="tshirt">T-Shirt</option>
-                        <option value="dress">Dress</option>
-                        <option value="jeans">Jeans</option>
-                        <option value="accessories">Accessories</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="editProductGender">Gender</label>
-                    <select id="editProductGender" required>
-                        <option value="men">Men</option>
-                        <option value="women">Women</option>
-                        <option value="kids">Kids</option>
-                        <option value="unisex">Unisex</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="editProductPrice">Price ($)</label>
-                    <input type="number" id="editProductPrice" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="editProductDescription">Description</label>
-                    <textarea id="editProductDescription" rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="editProductImage">Product Image</label>
-                    <input type="text" id="editProductImage">
-                </div>
-                <button type="submit" class="btn-primary">Update Product</button>
-            </form>
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="productName" required>
         </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="productDescription" rows="3" placeholder="Product description..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category</label>
+            <select id="productCategory" required>
+              <option value="cultural">Cultural</option>
+              <option value="tshirt">T-Shirt</option>
+              <option value="dress">Dress</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Gender</label>
+            <select id="productGender" required>
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+              <option value="kids">Kids</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Price (ETB)</label>
+          <input type="number" id="productPrice" step="0.01" required>
+        </div>
+
+        <button type="submit" class="btn-primary">Add Product to GitHub</button>
+
+        <p style="margin-top:1rem;color:#b23b3b;font-weight:600;">
+          ⚠️ Don’t put GitHub tokens in frontend code. Use a backend function for saving.
+        </p>
+      </form>
+
+      <h2 style="margin-top: 3rem; margin-bottom: 1rem;">Manage Products</h2>
+      <div class="product-list" id="productList"></div>
     </div>
+  </div>
 
-    <script>
-        // Products stored in memory (in a real app, this would be in a database)
-        let products = [
-            {
-                id: 1,
-                name: "Traditional Kaftan",
-                category: "cultural",
-                gender: "women",
-                price: 89.99,
-                description: "Beautiful traditional kaftan with intricate embroidery",
-                image: "👘"
-            },
-            {
-                id: 2,
-                name: "Classic White T-Shirt",
-                category: "tshirt",
-                gender: "unisex",
-                price: 19.99,
-                description: "Comfortable cotton t-shirt",
-                image: "👕"
-            },
-            {
-                id: 3,
-                name: "Designer Kurta",
-                category: "cultural",
-                gender: "men",
-                price: 79.99,
-                description: "Elegant kurta for special occasions",
-                image: "🥻"
-            },
-            {
-                id: 4,
-                name: "Summer Dress",
-                category: "dress",
-                gender: "women",
-                price: 59.99,
-                description: "Light and breezy summer dress",
-                image: "👗"
-            },
-            {
-                id: 5,
-                name: "Kids Casual Outfit",
-                category: "tshirt",
-                gender: "kids",
-                price: 29.99,
-                description: "Comfortable outfit for kids",
-                image: "👶"
-            }
-        ];
+  <!-- Admin Login Modal -->
+  <div id="adminLoginModal" class="modal" onclick="backdropClose(event, 'adminLoginModal')">
+    <div class="login-modal" onclick="event.stopPropagation()">
+      <h2>Admin Login</h2>
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="adminEmail" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="adminPassword" required>
+        </div>
+        <button type="submit" class="btn-primary">Login</button>
 
-        let cart = [];
-        let currentFilter = 'all';
-        let nextId = 6;
+        <p style="margin-top: 1rem; text-align: center; color: #636e72; font-size: 0.9rem;">
+          Owner: eshetuwek1@gmail.com
+        </p>
+      </form>
+    </div>
+  </div>
 
-        // Initialize
+  <!-- CART MODAL -->
+  <div id="cartModal" class="modal" onclick="backdropClose(event, 'cartModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Shopping Cart</h2>
+        <span class="close-modal" onclick="closeCart()">&times;</span>
+      </div>
+      <div id="cartItems"></div>
+      <div class="cart-total">Total: <span id="cartTotal">0</span> ETB</div>
+      <button class="btn-success" onclick="proceedToCheckout()" style="margin-top: 1.5rem;">Checkout</button>
+    </div>
+  </div>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="checkoutModal" class="modal" onclick="backdropClose(event, 'checkoutModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Checkout</h2>
+        <span class="close-modal" onclick="closeCheckout()">&times;</span>
+      </div>
+
+      <div class="checkout-steps">
+        <div class="step active" id="step1">Shipping</div>
+        <div class="step" id="step2">Payment</div>
+        <div class="step" id="step3">Review</div>
+      </div>
+
+      <div id="shippingForm">
+        <h3 style="margin-bottom: 1.5rem;">Shipping Information</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" id="firstName" required>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="lastName" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" required>
+        </div>
+
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="phone" required>
+        </div>
+
+        <div class="form-group">
+          <label>Address</label>
+          <input type="text" id="address" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" id="city" required>
+          </div>
+          <div class="form-group">
+            <label>Region</label>
+            <input type="text" id="state" required>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" onclick="goToPayment()">Continue</button>
+      </div>
+
+      <div id="paymentForm" class="hidden">
+        <h3 style="margin-bottom: 1.5rem;">Payment Method</h3>
+
+        <div class="payment-option" onclick="selectPayment('telebirr', this)">
+          <h3>📱 Telebirr</h3>
+          <p>Mobile payment</p>
+        </div>
+
+        <div class="payment-option" onclick="selectPayment('card', this)">
+          <h3>💳 Card</h3>
+          <p>Credit/Debit card</p>
+        </div>
+
+        <div class="payment-option" onclick="selectPayment('cod', this)">
+          <h3>💵 Cash on Delivery</h3>
+        </div>
+
+        <div id="telebirrForm" class="hidden" style="margin-top: 2rem;">
+          <div class="form-group">
+            <label>Telebirr Phone</label>
+            <input type="tel" id="telebirrPhone">
+          </div>
+          <button type="button" class="btn-primary" onclick="goToReview()">Continue</button>
+        </div>
+
+        <div id="cardForm" class="hidden" style="margin-top: 2rem;">
+          <div class="form-group">
+            <label>Card Number</label>
+            <input type="text" id="cardNumber">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Expiry</label>
+              <input type="text" id="expiry" placeholder="MM/YY">
+            </div>
+            <div class="form-group">
+              <label>CVV</label>
+              <input type="text" id="cvv">
+            </div>
+          </div>
+          <button type="button" class="btn-primary" onclick="goToReview()">Continue</button>
+        </div>
+
+        <div id="codForm" class="hidden" style="margin-top: 2rem;">
+          <p style="padding: 1rem; background: #fff3cd; border-radius: 8px;">⚠️ Have cash ready on delivery</p>
+          <button type="button" class="btn-primary" onclick="goToReview()">Continue</button>
+        </div>
+      </div>
+
+      <div id="reviewForm" class="hidden">
+        <h3 style="margin-bottom: 1.5rem;">Review Order</h3>
+
+        <div class="order-summary">
+          <h4>Order Summary</h4>
+          <div id="reviewItems"></div>
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span id="reviewSubtotal">0 ETB</span>
+          </div>
+          <div class="summary-row">
+            <span>Shipping:</span>
+            <span>50 ETB</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total:</span>
+            <span id="reviewTotal">0 ETB</span>
+          </div>
+        </div>
+
+        <div class="order-summary">
+          <h4>Shipping</h4>
+          <div id="reviewAddress"></div>
+        </div>
+
+        <div class="order-summary">
+          <h4>Payment</h4>
+          <div id="reviewPayment"></div>
+        </div>
+
+        <button class="btn-success" onclick="placeOrder()">Place Order</button>
+      </div>
+
+      <div id="orderConfirmation" class="hidden">
+        <div style="text-align: center;">
+          <div class="success-icon">✅</div>
+          <h2>Order Placed!</h2>
+          <p style="font-size: 1.5rem; font-weight: 800; margin: 1rem 0;" id="orderNumber"></p>
+          <p style="color: #27ae60; margin: 1rem 0;">📧 Confirmation email sent!</p>
+          <div id="confirmationDetails" style="text-align: left; margin: 2rem 0;"></div>
+          <button class="btn-primary" onclick="continueShopping()">Continue Shopping</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+  <script>
+    // ===============================
+    // IMPORTANT SECURITY WARNING:
+    // Do NOT put GitHub tokens in frontend JS.
+    // Use a backend function for saving to GitHub securely.
+    // ===============================
+
+    // ===== GitHub Config (READ works without token if repo/file is public) =====
+    const GITHUB_USERNAME = "Eshetu70";
+    const GITHUB_REPO = "fashion";
+    const PRODUCTS_FILE = "products.json";
+
+    // If you still insist on saving directly from frontend (NOT SAFE),
+    // put a token here, but understand anyone can steal it:
+    const GITHUB_TOKEN = ""; // <-- leave blank for safety
+
+    // ===== EmailJS Configuration =====
+    (function () {
+      emailjs.init("048OB1q9jJCO0w5V0");
+    })();
+
+    const EMAILJS_SERVICE_ID = "service_i2ud88k";
+    const EMAILJS_TEMPLATE_ID = "template_9cd4w2a";
+
+    // ===== Admin Configuration (frontend-only; not secure) =====
+    const ADMIN_EMAIL = "eshetuwek1@gmail.com";
+    const ADMIN_PASSWORD = "admin123"; // change this
+
+    const SHIPPING_COST = 50;
+
+    let isAdminLoggedIn = false;
+    let products = [];
+    let cart = [];
+    let currentFilter = "all";
+    let currentImage = null;
+    let selectedPayment = null;
+    let orderData = {};
+
+    // ===== Helpers =====
+    function formatMoney(n) {
+      const num = Number(n) || 0;
+      return num.toFixed(0);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function backdropClose(e, modalId) {
+      if (e.target && e.target.id === modalId) {
+        if (modalId === "cartModal") closeCart();
+        if (modalId === "checkoutModal") closeCheckout();
+        if (modalId === "adminLoginModal") document.getElementById("adminLoginModal").classList.remove("active");
+      }
+    }
+
+    // ===== GitHub API: LOAD products =====
+    async function loadProductsFromGitHub() {
+      const loading = document.getElementById("loadingProducts");
+      try {
+        // Public read endpoint (no token required for public repos)
+        const url = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/${PRODUCTS_FILE}`;
+        const res = await fetch(url, { cache: "no-store" });
+
+        if (res.ok) {
+          const data = await res.json();
+          products = Array.isArray(data) ? data : [];
+        } else {
+          products = [];
+        }
+
+        loading.classList.add("hidden");
         renderProducts();
-        updateCartCount();
+      } catch (err) {
+        console.error(err);
+        loading.innerHTML = '<p style="color:#e74c3c;">Error loading products. Check repo/file path.</p>';
+      }
+    }
 
-        // Tab Management
-        function showTab(tabName) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
-            document.getElementById(tabName).classList.add('active');
+    // ===== GitHub API: SAVE products (requires token; not safe in frontend) =====
+    async function saveProductsToGitHub() {
+      if (!GITHUB_TOKEN) {
+        alert("Saving is disabled because GITHUB_TOKEN is empty (for safety). Use a backend function to save securely.");
+        return false;
+      }
 
-            if (tabName === 'manage') {
-                renderProductList();
-            }
-        }
-
-        // Filter Products
-        function filterProducts(category) {
-            currentFilter = category;
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            renderProducts();
-        }
-
-        // Render Products
-        function renderProducts() {
-            const grid = document.getElementById('productsGrid');
-            let filteredProducts = products;
-
-            if (currentFilter !== 'all') {
-                filteredProducts = products.filter(p => 
-                    p.category === currentFilter || p.gender === currentFilter
-                );
-            }
-
-            grid.innerHTML = filteredProducts.map(product => `
-                <div class="product-card">
-                    <div class="product-image">
-                        ${product.image.startsWith('http') ? 
-                            `<img src="${product.image}" alt="${product.name}">` : 
-                            product.image
-                        }
-                    </div>
-                    <div class="product-details">
-                        <div class="product-category">${product.category} • ${product.gender}</div>
-                        <div class="product-name">${product.name}</div>
-                        <div class="product-price">$${product.price.toFixed(2)}</div>
-                        <button class="add-to-cart-btn" onclick="addToCart(${product.id})">
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Add Product (Admin)
-        document.getElementById('productForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const newProduct = {
-                id: nextId++,
-                name: document.getElementById('productName').value,
-                category: document.getElementById('productCategory').value,
-                gender: document.getElementById('productGender').value,
-                price: parseFloat(document.getElementById('productPrice').value),
-                description: document.getElementById('productDescription').value,
-                image: document.getElementById('productImage').value || '👔'
-            };
-
-            products.push(newProduct);
-            renderProducts();
-            this.reset();
-            alert('Product added successfully!');
+      try {
+        // Get current SHA (if exists)
+        const getUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${PRODUCTS_FILE}`;
+        const getResponse = await fetch(getUrl, {
+          headers: {
+            Authorization: `Bearer ${GITHUB_TOKEN}`,
+            Accept: "application/vnd.github+json",
+          }
         });
 
-        // Cart Functions
-        function addToCart(productId) {
-            const product = products.find(p => p.id === productId);
-            cart.push(product);
-            updateCartCount();
-            alert('Added to cart!');
+        let sha = null;
+        if (getResponse.ok) {
+          const existing = await getResponse.json();
+          sha = existing.sha;
         }
 
-        function updateCartCount() {
-            document.getElementById('cartCount').textContent = cart.length;
-        }
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
 
-        function toggleCart() {
-            const modal = document.getElementById('cartModal');
-            modal.classList.toggle('active');
-            if (modal.classList.contains('active')) {
-                renderCart();
-            }
-        }
-
-        function renderCart() {
-            const cartItems = document.getElementById('cartItems');
-            const total = cart.reduce((sum, item) => sum + item.price, 0);
-
-            cartItems.innerHTML = cart.map((item, index) => `
-                <div class="cart-item">
-                    <div class="cart-item-image">${item.image}</div>
-                    <div class="cart-item-details">
-                        <div class="cart-item-name">${item.name}</div>
-                        <div class="cart-item-price">$${item.price.toFixed(2)}</div>
-                    </div>
-                    <button class="remove-btn" onclick="removeFromCart(${index})">Remove</button>
-                </div>
-            `).join('');
-
-            document.getElementById('cartTotal').textContent = total.toFixed(2);
-        }
-
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            updateCartCount();
-            renderCart();
-        }
-
-        function checkout() {
-            if (cart.length === 0) {
-                alert('Your cart is empty!');
-                return;
-            }
-            const total = cart.reduce((sum, item) => sum + item.price, 0);
-            alert(`Thank you for your purchase! Total: $${total.toFixed(2)}\n\nOrder will be processed shortly.`);
-            cart = [];
-            updateCartCount();
-            toggleCart();
-        }
-
-        // Product Management
-        function renderProductList() {
-            const list = document.getElementById('productList');
-            list.innerHTML = products.map(product => `
-                <div class="product-item">
-                    <div class="product-item-image">
-                        ${product.image.startsWith('http') ? 
-                            `<img src="${product.image}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : 
-                            product.image
-                        }
-                    </div>
-                    <div class="product-item-details">
-                        <h3>${product.name}</h3>
-                        <p><strong>Category:</strong> ${product.category} | <strong>Gender:</strong> ${product.gender}</p>
-                        <p><strong>Price:</strong> $${product.price.toFixed(2)}</p>
-                        <p>${product.description}</p>
-                    </div>
-                    <div class="product-actions">
-                        <button class="btn-edit" onclick="editProduct(${product.id})">Edit</button>
-                        <button class="btn-delete" onclick="deleteProduct(${product.id})">Delete</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function editProduct(id) {
-            const product = products.find(p => p.id === id);
-            document.getElementById('editProductId').value = product.id;
-            document.getElementById('editProductName').value = product.name;
-            document.getElementById('editProductCategory').value = product.category;
-            document.getElementById('editProductGender').value = product.gender;
-            document.getElementById('editProductPrice').value = product.price;
-            document.getElementById('editProductDescription').value = product.description;
-            document.getElementById('editProductImage').value = product.image;
-            document.getElementById('editModal').classList.add('active');
-        }
-
-        function closeEditModal() {
-            document.getElementById('editModal').classList.remove('active');
-        }
-
-        document.getElementById('editForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const id = parseInt(document.getElementById('editProductId').value);
-            const productIndex = products.findIndex(p => p.id === id);
-            
-            products[productIndex] = {
-                id: id,
-                name: document.getElementById('editProductName').value,
-                category: document.getElementById('editProductCategory').value,
-                gender: document.getElementById('editProductGender').value,
-                price: parseFloat(document.getElementById('editProductPrice').value),
-                description: document.getElementById('editProductDescription').value,
-                image: document.getElementById('editProductImage').value
-            };
-
-            renderProducts();
-            renderProductList();
-            closeEditModal();
-            alert('Product updated successfully!');
+        const putResponse = await fetch(getUrl, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${GITHUB_TOKEN}`,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: `Update products - ${new Date().toISOString()}`,
+            content,
+            sha
+          })
         });
 
-        function deleteProduct(id) {
-            if (confirm('Are you sure you want to delete this product?')) {
-                products = products.filter(p => p.id !== id);
-                renderProducts();
-                renderProductList();
-                alert('Product deleted successfully!');
-            }
+        if (!putResponse.ok) throw new Error("GitHub save failed");
+        return true;
+      } catch (error) {
+        console.error("Error saving products:", error);
+        alert("Error saving to GitHub. Check token/repo permissions.");
+        return false;
+      }
+    }
+
+    // ===== Render =====
+    function filterProducts(category, btnEl) {
+      currentFilter = category;
+      document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+      if (btnEl) btnEl.classList.add("active");
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById("productsGrid");
+      const filtered =
+        currentFilter === "all"
+          ? products
+          : products.filter(p => p.category === currentFilter || p.gender === currentFilter);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div style="padding:1rem;color:#636e72;">No products found.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => `
+        <div class="product-card">
+          <div class="product-image">
+            <img src="${p.image || ''}" alt="${escapeHtml(p.name || 'Product')}">
+          </div>
+          <div class="product-details">
+            <div class="product-category">${escapeHtml(p.category || '')} • ${escapeHtml(p.gender || '')}</div>
+            <div class="product-name">${escapeHtml(p.name || '')}</div>
+            ${p.description ? `<p style="font-size:0.9rem;color:#636e72;margin:0.5rem 0;">${escapeHtml(p.description)}</p>` : ""}
+            <div class="product-price">${formatMoney(p.price)} ETB</div>
+            <button class="add-to-cart-btn" onclick="addToCart(${p.id})">Add to Cart</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderProductList() {
+      const list = document.getElementById("productList");
+
+      if (products.length === 0) {
+        list.innerHTML = '<p style="color:#636e72;padding:1rem;">No products yet. Add your first product above!</p>';
+        return;
+      }
+
+      list.innerHTML = products.map(p => `
+        <div class="product-item">
+          <div class="product-item-image">
+            <img src="${p.image || ''}" alt="${escapeHtml(p.name || '')}">
+          </div>
+          <div class="product-item-details">
+            <h3>${escapeHtml(p.name || '')}</h3>
+            <p><strong>Category:</strong> ${escapeHtml(p.category || '')} | <strong>Gender:</strong> ${escapeHtml(p.gender || '')}</p>
+            <p><strong>Price:</strong> ${formatMoney(p.price)} ETB</p>
+            ${p.description ? `<p style="color:#636e72;">${escapeHtml(p.description)}</p>` : ""}
+          </div>
+          <div>
+            <button class="btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // ===== Cart =====
+    function addToCart(id) {
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+
+      cart.push(product);
+      document.getElementById("cartCount").textContent = cart.length;
+      alert("Added to cart!");
+    }
+
+    function openCart() {
+      document.getElementById("cartModal").classList.add("active");
+
+      if (cart.length === 0) {
+        document.getElementById("cartItems").innerHTML =
+          `<p style="padding:1rem;color:#636e72;">Your cart is empty.</p>`;
+        document.getElementById("cartTotal").textContent = "0";
+        return;
+      }
+
+      const total = cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+
+      document.getElementById("cartItems").innerHTML = cart.map((item, i) => `
+        <div class="cart-item">
+          <div class="cart-item-image"><img src="${item.image || ''}" alt="${escapeHtml(item.name || '')}"></div>
+          <div style="flex:1;">
+            <div style="font-weight:700;">${escapeHtml(item.name || '')}</div>
+            <div style="color:#e74c3c;font-weight:700;">${formatMoney(item.price)} ETB</div>
+          </div>
+          <button class="remove-btn" onclick="removeFromCart(${i})">Remove</button>
+        </div>
+      `).join("");
+
+      document.getElementById("cartTotal").textContent = formatMoney(total);
+    }
+
+    function closeCart() {
+      document.getElementById("cartModal").classList.remove("active");
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      document.getElementById("cartCount").textContent = cart.length;
+      openCart();
+    }
+
+    function proceedToCheckout() {
+      if (cart.length === 0) {
+        alert("Cart is empty!");
+        return;
+      }
+      closeCart();
+      resetCheckoutUI();
+      document.getElementById("checkoutModal").classList.add("active");
+    }
+
+    // ===== Checkout =====
+    function closeCheckout() {
+      document.getElementById("checkoutModal").classList.remove("active");
+    }
+
+    function goToPayment() {
+      const requiredIds = ["firstName","lastName","email","phone","address","city","state"];
+      const missing = requiredIds.some(id => !document.getElementById(id).value.trim());
+      if (missing) {
+        alert("Please fill all required fields");
+        return;
+      }
+
+      orderData.shipping = {
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        city: document.getElementById("city").value.trim(),
+        state: document.getElementById("state").value.trim(),
+      };
+
+      document.getElementById("shippingForm").classList.add("hidden");
+      document.getElementById("paymentForm").classList.remove("hidden");
+
+      document.getElementById("step1").classList.add("completed");
+      document.getElementById("step1").classList.remove("active");
+      document.getElementById("step2").classList.add("active");
+    }
+
+    function selectPayment(method, optionEl) {
+      selectedPayment = method;
+
+      document.querySelectorAll(".payment-option").forEach(opt => opt.classList.remove("selected"));
+      if (optionEl) optionEl.classList.add("selected");
+
+      document.getElementById("telebirrForm").classList.add("hidden");
+      document.getElementById("cardForm").classList.add("hidden");
+      document.getElementById("codForm").classList.add("hidden");
+
+      if (method === "telebirr") document.getElementById("telebirrForm").classList.remove("hidden");
+      if (method === "card") document.getElementById("cardForm").classList.remove("hidden");
+      if (method === "cod") document.getElementById("codForm").classList.remove("hidden");
+    }
+
+    function goToReview() {
+      if (!selectedPayment) {
+        alert("Please select a payment method.");
+        return;
+      }
+
+      orderData.payment = selectedPayment;
+
+      document.getElementById("paymentForm").classList.add("hidden");
+      document.getElementById("reviewForm").classList.remove("hidden");
+
+      document.getElementById("step2").classList.add("completed");
+      document.getElementById("step2").classList.remove("active");
+      document.getElementById("step3").classList.add("active");
+
+      const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+
+      document.getElementById("reviewItems").innerHTML = cart
+        .map(item => `<div style="margin-bottom:0.5rem;">${escapeHtml(item.name)} - ${formatMoney(item.price)} ETB</div>`)
+        .join("");
+
+      document.getElementById("reviewSubtotal").textContent = formatMoney(subtotal) + " ETB";
+      document.getElementById("reviewTotal").textContent = formatMoney(subtotal + SHIPPING_COST) + " ETB";
+
+      document.getElementById("reviewAddress").innerHTML = `
+        ${escapeHtml(orderData.shipping.firstName)} ${escapeHtml(orderData.shipping.lastName)}<br>
+        ${escapeHtml(orderData.shipping.address)}<br>
+        ${escapeHtml(orderData.shipping.city)}, ${escapeHtml(orderData.shipping.state)}<br>
+        ${escapeHtml(orderData.shipping.phone)}
+      `;
+
+      document.getElementById("reviewPayment").textContent =
+        selectedPayment === "telebirr" ? "Telebirr" :
+        selectedPayment === "card" ? "Credit/Debit Card" :
+        "Cash on Delivery";
+    }
+
+    function placeOrder() {
+      if (!orderData.shipping || !orderData.payment) {
+        alert("Please complete shipping and payment steps.");
+        return;
+      }
+
+      const orderNum = "ORD" + Date.now();
+      const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+      const total = subtotal + SHIPPING_COST;
+
+      const itemsText = cart.map(item => `${item.name} - ${item.price} ETB`).join("\n");
+
+      // Send emails (best-effort)
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: "eshetuwek1@gmail.com",
+        order_number: orderNum,
+        customer_name: orderData.shipping.firstName + " " + orderData.shipping.lastName,
+        customer_email: orderData.shipping.email,
+        customer_phone: orderData.shipping.phone,
+        delivery_address: `${orderData.shipping.address}, ${orderData.shipping.city}, ${orderData.shipping.state}`,
+        payment_method: orderData.payment,
+        total_amount: total + " ETB",
+        items: itemsText
+      }).catch(err => console.warn("EmailJS send failed:", err));
+
+      document.getElementById("reviewForm").classList.add("hidden");
+      document.getElementById("orderConfirmation").classList.remove("hidden");
+      document.getElementById("orderNumber").textContent = "Order #" + orderNum;
+
+      document.getElementById("confirmationDetails").innerHTML = `
+        <div class="order-summary">
+          <h4>Order Details</h4>
+          ${cart.map(item => `<p>${escapeHtml(item.name)} - ${formatMoney(item.price)} ETB</p>`).join("")}
+          <p><strong>Total: ${formatMoney(total)} ETB</strong></p>
+          <p>Delivery to: ${escapeHtml(orderData.shipping.address)}, ${escapeHtml(orderData.shipping.city)}</p>
+          <p>Payment: ${escapeHtml(orderData.payment)}</p>
+        </div>
+      `;
+
+      cart = [];
+      document.getElementById("cartCount").textContent = "0";
+    }
+
+    function continueShopping() {
+      closeCheckout();
+      resetCheckoutUI();
+      showShop();
+    }
+
+    function resetCheckoutUI() {
+      selectedPayment = null;
+      orderData = {};
+
+      document.getElementById("step1").classList.add("active");
+      document.getElementById("step1").classList.remove("completed");
+      document.getElementById("step2").classList.remove("active", "completed");
+      document.getElementById("step3").classList.remove("active");
+
+      document.getElementById("shippingForm").classList.remove("hidden");
+      document.getElementById("paymentForm").classList.add("hidden");
+      document.getElementById("reviewForm").classList.add("hidden");
+      document.getElementById("orderConfirmation").classList.add("hidden");
+
+      document.querySelectorAll(".payment-option").forEach(opt => opt.classList.remove("selected"));
+      document.getElementById("telebirrForm").classList.add("hidden");
+      document.getElementById("cardForm").classList.add("hidden");
+      document.getElementById("codForm").classList.add("hidden");
+    }
+
+    // ===== Admin =====
+    function promptAdminLogin() {
+      if (isAdminLoggedIn) {
+        showAdmin();
+        return;
+      }
+      document.getElementById("adminLoginModal").classList.add("active");
+    }
+
+    function showShop() {
+      document.getElementById("adminSection").classList.add("hidden");
+      document.getElementById("shopSection").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function showAdmin() {
+      if (!isAdminLoggedIn) {
+        alert("Please login as admin first!");
+        promptAdminLogin();
+        return;
+      }
+      document.getElementById("adminSection").classList.remove("hidden");
+      renderProductList();
+      window.scrollTo({ top: document.getElementById("adminSection").offsetTop, behavior: "smooth" });
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm("Delete this product?")) return;
+
+      products = products.filter(p => p.id !== id);
+      const saved = await saveProductsToGitHub();
+
+      if (saved) {
+        renderProducts();
+        renderProductList();
+        alert("Product deleted from GitHub!");
+      }
+    }
+
+    // ===== DOM Ready =====
+    document.addEventListener("DOMContentLoaded", () => {
+      // Image input preview
+      document.getElementById("imageInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          currentImage = ev.target.result;
+          const img = document.getElementById("imagePreview");
+          img.src = currentImage;
+          img.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Admin login form
+      document.getElementById("adminLoginForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const email = document.getElementById("adminEmail").value.trim();
+        const password = document.getElementById("adminPassword").value;
+
+        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+          isAdminLoggedIn = true;
+          document.getElementById("adminLoginModal").classList.remove("active");
+          showAdmin();
+          alert("Admin login successful!");
+        } else {
+          alert("Invalid credentials!");
         }
-    </script>
+      });
+
+      // Product form (FIXED)
+      document.getElementById("productForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        if (!isAdminLoggedIn) {
+          alert("Please login as admin!");
+          return;
+        }
+
+        if (!currentImage) {
+          alert("Please upload an image.");
+          return;
+        }
+
+        const newProduct = {
+          id: Date.now(),
+          name: document.getElementById("productName").value.trim(),
+          description: document.getElementById("productDescription").value.trim(),
+          category: document.getElementById("productCategory").value,
+          gender: document.getElementById("productGender").value,
+          price: Number(document.getElementById("productPrice").value) || 0,
+          image: currentImage
+        };
+
+        products.unshift(newProduct);
+
+        const saved = await saveProductsToGitHub();
+        if (saved) {
+          renderProducts();
+          renderProductList();
+          this.reset();
+          document.getElementById("imagePreview").classList.add("hidden");
+          currentImage = null;
+          alert("Product added to GitHub successfully!");
+        }
+      });
+
+      // Load products
+      loadProductsFromGitHub();
+    });
+  </script>
 </body>
 </html>
