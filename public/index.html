@@ -8,19 +8,24 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #1a1a1a; }
+
     .header { background: linear-gradient(135deg, #2d3436 0%, #000000 100%); color: white; padding: 1rem 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
     .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
-    .logo { font-size: 1.8rem; font-weight: 800; color: white; text-decoration: none; cursor: pointer; }
+    .logo { font-size: 1.8rem; font-weight: 800; color: white; text-decoration: none; cursor: pointer; user-select:none; }
     .nav-menu { display: flex; list-style: none; gap: 2rem; align-items: center; }
     .nav-menu a { color: white; text-decoration: none; font-weight: 500; cursor: pointer; }
+
     .cart-icon { position: relative; font-size: 1.5rem; cursor: pointer; user-select: none; }
     .cart-count { position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+
     .hero { background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23667eea" width="1200" height="600"/></svg>'); background-size: cover; color: white; padding: 6rem 2rem 4rem; text-align: center; }
     .hero h1 { font-size: 3.5rem; margin-bottom: 1rem; font-weight: 800; }
+
     .filter-section { background: #f8f9fa; padding: 1.5rem; border-bottom: 2px solid #ddd; }
     .filter-container { max-width: 1400px; margin: 0 auto; display: flex; gap: 1rem; flex-wrap: wrap; }
     .filter-btn { padding: 0.7rem 1.3rem; border: 2px solid #2d3436; background: white; color: #2d3436; border-radius: 25px; cursor: pointer; font-weight: 600; }
     .filter-btn.active { background: #2d3436; color: white; }
+
     .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; max-width: 1400px; margin: 3rem auto; padding: 0 2rem; }
     .product-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); transition: all 0.3s; }
     .product-card:hover { transform: translateY(-10px); }
@@ -31,18 +36,43 @@
     .product-name { font-size: 1.2rem; font-weight: 700; margin: 0.5rem 0; }
     .product-price { font-size: 1.4rem; font-weight: 800; color: #e74c3c; margin-bottom: 1rem; }
     .add-to-cart-btn { width: 100%; padding: 0.9rem; background: #2d3436; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
     .hidden { display:none !important; }
+
     .admin-panel { max-width:800px; margin:3rem auto; padding:2rem; background:white; border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.1); }
     .image-upload-area { border:3px dashed #ddd; border-radius:12px; padding:2rem; text-align:center; cursor:pointer; }
     .image-preview { max-width:100%; max-height:300px; margin-top:1rem; border-radius:8px; }
+
     .product-list { margin-top:2rem; }
     .product-item { background:white; padding:1.5rem; border-radius:10px; margin-bottom:1rem; box-shadow:0 3px 10px rgba(0,0,0,0.1); display:flex; gap:1rem; align-items:center; }
     .product-item-image { width:100px; height:100px; border-radius:8px; overflow:hidden; background:#f1f1f1; }
     .product-item-image img { width:100%; height:100%; object-fit:cover; }
     .product-item-details { flex:1; }
+
     .btn-primary { padding: 0.9rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
     .btn-danger { padding: 0.7rem 1rem; background:#e74c3c; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
+
     .loading { text-align:center; padding:3rem; font-size:1.2rem; color:#636e72; }
+
+    .notice {
+      max-width: 1400px;
+      margin: 1rem auto 0;
+      padding: 0 2rem;
+      color: #2d3436;
+      font-size: 0.95rem;
+    }
+    .notice code{ background:#f1f1f1; padding:0.15rem 0.35rem; border-radius:6px; }
+
+    input, textarea, select {
+      width:100%;
+      padding:0.8rem;
+      border:2px solid #ddd;
+      border-radius:8px;
+      font-size: 1rem;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color:#667eea; }
+
     @media (max-width:768px){ .hero h1{font-size:2.3rem;} }
   </style>
 </head>
@@ -68,6 +98,10 @@
     <p>Premium Fashion Collection - Cultural & Modern Clothing</p>
   </section>
 
+  <div class="notice">
+    Backend: <code id="backendLabel"></code>
+  </div>
+
   <div class="filter-section" id="shopSection">
     <div class="filter-container">
       <button class="filter-btn active" onclick="filterProducts('all', this)">All</button>
@@ -89,30 +123,36 @@
       <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.5rem;">
         <button class="btn-primary" onclick="setAdminKey()">Set Admin Key</button>
         <button class="btn-danger" onclick="logoutAdmin()">Logout</button>
+        <button class="btn-primary" onclick="testAdminKey()">Test Admin Key</button>
       </div>
 
+      <p style="color:#636e72;margin-bottom:1.25rem;">
+        ✅ This version uploads the image as a real file to GitHub and stores only the image URL in <b>products.json</b>.
+      </p>
+
       <h3 style="margin-bottom:1rem;">Add New Product</h3>
+
       <form id="productForm">
         <div class="image-upload-area" onclick="document.getElementById('imageInput').click()">
-          <p>📷 Upload Image</p>
+          <p>📷 Upload Image (max 2MB)</p>
           <input type="file" id="imageInput" accept="image/*" style="display:none;">
           <img id="imagePreview" class="image-preview hidden" alt="Preview">
         </div>
 
         <div style="margin-top:1rem;">
           <label><b>Product Name</b></label>
-          <input id="productName" required style="width:100%;padding:0.8rem;border:2px solid #ddd;border-radius:8px;">
+          <input id="productName" required placeholder="e.g., Ethiopian Dress">
         </div>
 
         <div style="margin-top:1rem;">
           <label><b>Description</b></label>
-          <textarea id="productDescription" rows="3" style="width:100%;padding:0.8rem;border:2px solid #ddd;border-radius:8px;"></textarea>
+          <textarea id="productDescription" rows="3" placeholder="Product description..."></textarea>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
           <div>
             <label><b>Category</b></label>
-            <select id="productCategory" required style="width:100%;padding:0.8rem;border:2px solid #ddd;border-radius:8px;">
+            <select id="productCategory" required>
               <option value="cultural">Cultural</option>
               <option value="tshirt">T-Shirt</option>
               <option value="dress">Dress</option>
@@ -120,7 +160,7 @@
           </div>
           <div>
             <label><b>Gender</b></label>
-            <select id="productGender" required style="width:100%;padding:0.8rem;border:2px solid #ddd;border-radius:8px;">
+            <select id="productGender" required>
               <option value="men">Men</option>
               <option value="women">Women</option>
               <option value="kids">Kids</option>
@@ -130,10 +170,11 @@
 
         <div style="margin-top:1rem;">
           <label><b>Price (ETB)</b></label>
-          <input type="number" id="productPrice" step="0.01" required style="width:100%;padding:0.8rem;border:2px solid #ddd;border-radius:8px;">
+          <input type="number" id="productPrice" step="0.01" required placeholder="e.g., 1500">
         </div>
 
-        <button class="btn-primary" type="submit" style="width:100%;margin-top:1.2rem;">Add Product</button>
+        <button class="btn-primary" id="addBtn" type="submit" style="width:100%;margin-top:1.2rem;">Add Product</button>
+        <p id="adminStatus" style="margin-top:0.75rem;color:#636e72;"></p>
       </form>
 
       <h3 style="margin-top:2rem;margin-bottom:1rem;">Manage Products</h3>
@@ -142,18 +183,46 @@
   </div>
 
   <script>
-    // ✅ YOUR RENDER BACKEND
-    const API_BASE = "https://fashion-2tif.onrender.com";
+    // =======================
+    // CONFIG
+    // =======================
+    const API_BASE = "https://fashion-2tif.onrender.com"; // your Render backend
+    document.getElementById("backendLabel").textContent = API_BASE;
 
+    // =======================
+    // STATE
+    // =======================
     let products = [];
     let currentFilter = "all";
-    let currentImage = null;
 
+    // Admin key stored locally in your browser
     const ADMIN_KEY_STORAGE = "FASHION_ADMIN_KEY";
     const getAdminKey = () => localStorage.getItem(ADMIN_KEY_STORAGE) || "";
 
+    // =======================
+    // UI HELPERS
+    // =======================
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function formatMoney(n){ return (Number(n)||0).toFixed(0); }
+
+    function setStatus(msg, isError=false){
+      const el = document.getElementById("adminStatus");
+      el.textContent = msg || "";
+      el.style.color = isError ? "#e74c3c" : "#636e72";
+    }
+
+    // =======================
+    // ADMIN KEY ACTIONS
+    // =======================
     function setAdminKey() {
-      const k = prompt("Enter ADMIN_API_KEY (from Render env vars):");
+      const k = prompt("Enter ADMIN_API_KEY (Render env var):");
       if (!k) return;
       localStorage.setItem(ADMIN_KEY_STORAGE, k.trim());
       alert("Admin key saved on this browser.");
@@ -163,16 +232,44 @@
       alert("Admin key removed.");
     }
 
-    function escapeHtml(str){
-      return String(str)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function formatMoney(n){ return (Number(n)||0).toFixed(0); }
+    async function testAdminKey(){
+      const k = getAdminKey();
+      if (!k) return alert("Admin key not set. Click 'Set Admin Key' first.");
 
+      try{
+        // We test by hitting /api/products with a POST that will fail validation but must pass auth:
+        const fd = new FormData();
+        fd.append("name", "TEST");
+        fd.append("category", "cultural");
+        fd.append("gender", "men");
+        fd.append("price", "1");
+        // no image => should return 400 "Image file is required" IF AUTH IS OK
+        const res = await fetch(API_BASE + "/api/products", {
+          method: "POST",
+          headers: { "x-admin-key": k },
+          body: fd
+        });
+
+        const text = await res.text();
+        let data = {};
+        try{ data = JSON.parse(text); }catch{}
+
+        if (res.status === 401) return alert("❌ Unauthorized. Admin key is wrong.");
+        if (res.status === 500 && (data?.error || "").includes("Server missing ADMIN")) {
+          return alert("❌ Server missing ADMIN_API_KEY on Render (env not set).");
+        }
+        if (res.status === 400 && (data?.error || "").toLowerCase().includes("image")) {
+          return alert("✅ Admin key is correct (auth passed).");
+        }
+        alert("Response: " + res.status + " " + text);
+      }catch(e){
+        alert("Test error: " + e.message);
+      }
+    }
+
+    // =======================
+    // LOAD PRODUCTS
+    // =======================
     async function loadProducts(){
       const loading = document.getElementById("loadingProducts");
       try {
@@ -181,12 +278,16 @@
         products = Array.isArray(data) ? data : [];
         loading.classList.add("hidden");
         renderProducts();
+        renderProductList();
       } catch (err) {
         console.error(err);
         loading.innerHTML = '<p style="color:#e74c3c;">Failed to load products from backend.</p>';
       }
     }
 
+    // =======================
+    // FILTER + RENDER SHOP
+    // =======================
     function filterProducts(category, btnEl){
       currentFilter = category;
       document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
@@ -208,7 +309,7 @@
       grid.innerHTML = filtered.map(p => `
         <div class="product-card">
           <div class="product-image">
-            <img src="${p.image || ''}" alt="${escapeHtml(p.name || 'Product')}">
+            <img src="${p.image || ''}" alt="${escapeHtml(p.name || 'Product')}" onerror="this.style.display='none'">
           </div>
           <div class="product-details">
             <div class="product-category">${escapeHtml(p.category || '')} • ${escapeHtml(p.gender || '')}</div>
@@ -221,6 +322,9 @@
       `).join("");
     }
 
+    // =======================
+    // ADMIN UI
+    // =======================
     function openAdmin(){
       document.getElementById("adminSection").classList.remove("hidden");
       renderProductList();
@@ -241,7 +345,7 @@
       list.innerHTML = products.map(p => `
         <div class="product-item">
           <div class="product-item-image">
-            <img src="${p.image || ''}" alt="${escapeHtml(p.name || '')}">
+            <img src="${p.image || ''}" alt="${escapeHtml(p.name || '')}" onerror="this.style.display='none'">
           </div>
           <div class="product-item-details">
             <h3>${escapeHtml(p.name || '')}</h3>
@@ -249,45 +353,119 @@
             <p><b>Price:</b> ${formatMoney(p.price)} ETB</p>
           </div>
           <div>
-            <button class="btn-danger" onclick="deleteProduct('${p.id}')">Delete</button>
+            <button class="btn-danger" onclick="deleteProduct('${String(p.id).replaceAll("'","")}')">Delete</button>
           </div>
         </div>
       `).join("");
     }
 
-    async function adminFetch(url, options = {}) {
-      const adminKey = getAdminKey();
-      if (!adminKey) {
-        alert("Admin key not set. Click 'Set Admin Key' first.");
-        throw new Error("Missing admin key");
-      }
-      const headers = { ...(options.headers || {}), "x-admin-key": adminKey, "Content-Type": "application/json" };
-      return fetch(url, { ...options, headers });
-    }
-
     async function deleteProduct(id){
       if (!confirm("Delete this product?")) return;
-      try {
-        const res = await adminFetch(API_BASE + "/api/products/" + encodeURIComponent(id), { method: "DELETE" });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Delete failed");
-        await loadProducts();
-        renderProductList();
+
+      const adminKey = getAdminKey();
+      if (!adminKey) return alert("Admin key not set. Click 'Set Admin Key' first.");
+
+      try{
+        const res = await fetch(API_BASE + "/api/products/" + encodeURIComponent(id), {
+          method: "DELETE",
+          headers: { "x-admin-key": adminKey }
+        });
+
+        const text = await res.text();
+        let data = {};
+        try { data = JSON.parse(text); } catch {}
+
+        if (!res.ok) {
+          console.log("DELETE STATUS:", res.status);
+          console.log("DELETE RESPONSE:", text);
+          throw new Error(data.error || data.details || text || "Delete failed");
+        }
+
         alert("Deleted!");
-      } catch (e) {
+        await loadProducts();
+      }catch(e){
         alert("Delete error: " + e.message);
       }
     }
 
+    // =======================
+    // ADD PRODUCT (multipart/form-data)
+    // =======================
+    async function addProduct(formEl){
+      const adminKey = getAdminKey();
+      if (!adminKey) {
+        alert("Admin key not set. Click 'Set Admin Key' first.");
+        return;
+      }
+
+      const file = document.getElementById("imageInput").files[0];
+      if (!file) return alert("Please select an image file.");
+
+      // 2MB limit (matches backend)
+      if (file.size > 2 * 1024 * 1024) {
+        return alert("Image too large. Please use an image under 2MB.");
+      }
+
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("name", document.getElementById("productName").value.trim());
+      fd.append("description", document.getElementById("productDescription").value.trim());
+      fd.append("category", document.getElementById("productCategory").value);
+      fd.append("gender", document.getElementById("productGender").value);
+      fd.append("price", document.getElementById("productPrice").value);
+
+      const btn = document.getElementById("addBtn");
+      btn.disabled = true;
+      btn.textContent = "Uploading...";
+      setStatus("Uploading image + saving product...");
+
+      try{
+        // IMPORTANT: do NOT set Content-Type when sending FormData
+        const res = await fetch(API_BASE + "/api/products", {
+          method: "POST",
+          headers: { "x-admin-key": adminKey },
+          body: fd
+        });
+
+        const text = await res.text();
+        let data = {};
+        try { data = JSON.parse(text); } catch {}
+
+        if (!res.ok) {
+          console.log("ADD STATUS:", res.status);
+          console.log("ADD RESPONSE:", text);
+          throw new Error(data.error || data.details || text || "Failed to add product");
+        }
+
+        alert("Product added!");
+        setStatus("Saved ✅");
+
+        formEl.reset();
+        document.getElementById("imagePreview").classList.add("hidden");
+
+        await loadProducts();
+      }catch(e){
+        setStatus("Error: " + e.message, true);
+        alert("Add error: " + e.message);
+      }finally{
+        btn.disabled = false;
+        btn.textContent = "Add Product";
+      }
+    }
+
+    // =======================
+    // DOM READY
+    // =======================
     document.addEventListener("DOMContentLoaded", () => {
+      // image preview only
       document.getElementById("imageInput").addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = (ev) => {
-          currentImage = ev.target.result;
           const img = document.getElementById("imagePreview");
-          img.src = currentImage;
+          img.src = ev.target.result;
           img.classList.remove("hidden");
         };
         reader.readAsDataURL(file);
@@ -295,37 +473,7 @@
 
       document.getElementById("productForm").addEventListener("submit", async (e) => {
         e.preventDefault();
-
-        if (!currentImage) return alert("Please upload an image.");
-
-        const newProduct = {
-          name: document.getElementById("productName").value.trim(),
-          description: document.getElementById("productDescription").value.trim(),
-          category: document.getElementById("productCategory").value,
-          gender: document.getElementById("productGender").value,
-          price: Number(document.getElementById("productPrice").value) || 0,
-          image: currentImage
-        };
-
-        try {
-          const res = await adminFetch(API_BASE + "/api/products", {
-            method: "POST",
-            body: JSON.stringify({ product: newProduct })
-          });
-
-          const data = await res.json();
-          if (!res.ok) throw new Error(data?.error || "Add failed");
-
-          alert("Product added!");
-          e.target.reset();
-          document.getElementById("imagePreview").classList.add("hidden");
-          currentImage = null;
-
-          await loadProducts();
-          renderProductList();
-        } catch (err) {
-          alert("Add error: " + err.message);
-        }
+        await addProduct(e.target);
       });
 
       loadProducts();

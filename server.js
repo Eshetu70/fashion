@@ -1,18 +1,15 @@
 /**
  * server.js (Node 18+)
  * - Serves frontend from /public
- * - API reads/writes products.json in GitHub repo securely (token stays server-side)
+ * - API reads/writes products.json in GitHub repo securely
+ * - Accepts multipart/form-data for product upload (image file)
  *
  * Routes:
  *   GET  /                  -> public/index.html
  *   GET  /health            -> ok
  *   GET  /api/products      -> list products
- *   POST /api/products      -> add product (admin)
- *   PUT  /api/products/:id  -> update product (admin)
+ *   POST /api/products      -> add product (admin, multipart)
  *   DELETE /api/products/:id-> delete product (admin)
- *
- * Admin header:
- *   x-admin-key: <ADMIN_API_KEY>
  */
 
 require("dotenv").config();
@@ -21,29 +18,24 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+const multer = require("multer");
 
 if (typeof fetch !== "function") {
   throw new Error("Global fetch missing. Use Node.js 18+");
 }
 
 const app = express();
-
-// ✅ CORS (allow your frontend anywhere; tighten later if you want)
 app.use(cors());
-app.use(express.json({ limit: "25mb" }));
+app.use(express.json({ limit: "2mb" })); // only for JSON routes, not file uploads
 
-// ✅ Serve static frontend
+// ---------- Static frontend ----------
 const publicDir = path.join(__dirname, "public");
 const indexFile = path.join(publicDir, "index.html");
-
 app.use(express.static(publicDir));
 
-// ✅ Home route
 app.get("/", (req, res) => {
   if (fs.existsSync(indexFile)) return res.sendFile(indexFile);
-  return res
-    .status(200)
-    .send("Backend is running, but index.html is missing in /public.");
+  return res.status(200).send("Backend running, but /public/index.html missing.");
 });
 
 app.get("/health", (req, res) => res.json({ ok: true }));
@@ -58,6 +50,7 @@ const {
   PRODUCTS_FILE = "products.json",
   GITHUB_BRANCH = "main",
   ADMIN_API_KEY,
+  IMAGES_DIR = "images" // folder inside your repo
 } = process.env;
 
 if (!GITHUB_USERNAME || !GITHUB_REPO) console.warn("⚠️ Missing GITHUB_USERNAME or GITHUB_REPO");
@@ -65,6 +58,14 @@ if (!GITHUB_TOKEN) console.warn("⚠️ Missing GITHUB_TOKEN (writes will fail)"
 if (!ADMIN_API_KEY) console.warn("⚠️ Missing ADMIN_API_KEY (writes blocked)");
 
 const GH_API_BASE = "https://api.github.com";
+
+// ---------- Multer for multipart ----------
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB
+  },
+});
 
 // ---------- Helpers ----------
 function requireAdmin(req, res, next) {
@@ -83,10 +84,8 @@ function ghHeaders() {
   };
 }
 
-function contentUrlWithRef() {
-  return `${GH_API_BASE}/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${encodeURIComponent(
-    PRODUCTS_FILE
-  )}?ref=${encodeURIComponent(GITHUB_BRANCH)}`;
+function toBase64(buf) {
+  return Buffer.from(buf).toString("base64");
 }
 
 function toBase64Utf8(str) {
@@ -116,13 +115,29 @@ function validateProduct(p) {
   if (!p.category) return "Category is required";
   if (!p.gender) return "Gender is required";
   if (typeof p.price !== "number" || Number.isNaN(p.price)) return "Price must be a number";
-  if (!p.image) return "Image is required";
+  if (!p.image) return "Image URL is required";
   return null;
 }
 
-// ---------- GitHub read/write ----------
+function productsContentUrlWithRef() {
+  return `${GH_API_BASE}/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${encodeURIComponent(
+    PRODUCTS_FILE
+  )}?ref=${encodeURIComponent(GITHUB_BRANCH)}`;
+}
+
+function repoContentPutUrl(filePath) {
+  // filePath like "images/abc.png" or "products.json"
+  return `${GH_API_BASE}/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${encodeURIComponent(filePath)}`;
+}
+
+function rawUrlFor(filePath) {
+  // raw GitHub URL for public access
+  return `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filePath}`;
+}
+
+// ---------- GitHub read/write: products.json ----------
 async function getProductsFileFromGitHub() {
-  const res = await fetch(contentUrlWithRef(), { headers: ghHeaders() });
+  const res = await fetch(productsContentUrlWithRef(), { headers: ghHeaders() });
 
   if (res.status === 404) return { sha: null, products: [] };
 
@@ -146,10 +161,6 @@ async function getProductsFileFromGitHub() {
 }
 
 async function putProductsFileToGitHub(products, sha) {
-  const url = `${GH_API_BASE}/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${encodeURIComponent(
-    PRODUCTS_FILE
-  )}`;
-
   const body = {
     message: `Update ${PRODUCTS_FILE} - ${new Date().toISOString()}`,
     content: toBase64Utf8(JSON.stringify(products, null, 2)),
@@ -157,7 +168,7 @@ async function putProductsFileToGitHub(products, sha) {
   };
   if (sha) body.sha = sha;
 
-  const res = await fetch(url, {
+  const res = await fetch(repoContentPutUrl(PRODUCTS_FILE), {
     method: "PUT",
     headers: { ...ghHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -165,10 +176,55 @@ async function putProductsFileToGitHub(products, sha) {
 
   if (!res.ok) {
     const txt = await res.text();
-    throw new Error(`GitHub PUT failed: ${res.status} ${txt}`);
+    throw new Error(`GitHub PUT products failed: ${res.status} ${txt}`);
   }
 
   return res.json();
+}
+
+// ---------- GitHub upload image ----------
+async function uploadImageToGitHub(fileBuffer, originalName, mimeType) {
+  const ext =
+    (originalName && originalName.includes(".") && originalName.split(".").pop()) ||
+    (mimeType && mimeType.includes("/") && mimeType.split("/")[1]) ||
+    "png";
+
+  const safeExt = String(ext).replace(/[^a-z0-9]/gi, "").toLowerCase() || "png";
+  const fileName = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${safeExt}`;
+  const filePath = `${IMAGES_DIR}/${fileName}`;
+
+  // See if file already exists (rare) to get sha; otherwise create new
+  let existingSha = null;
+  const getRes = await fetch(
+    `${GH_API_BASE}/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${encodeURIComponent(filePath)}?ref=${encodeURIComponent(GITHUB_BRANCH)}`,
+    { headers: ghHeaders() }
+  );
+
+  if (getRes.ok) {
+    const existing = await getRes.json();
+    existingSha = existing.sha;
+  }
+
+  const body = {
+    message: `Upload image ${fileName}`,
+    content: toBase64(fileBuffer),
+    branch: GITHUB_BRANCH,
+  };
+  if (existingSha) body.sha = existingSha;
+
+  const putRes = await fetch(repoContentPutUrl(filePath), {
+    method: "PUT",
+    headers: { ...ghHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!putRes.ok) {
+    const txt = await putRes.text();
+    throw new Error(`GitHub PUT image failed: ${putRes.status} ${txt}`);
+  }
+
+  // Return raw URL to store in products.json
+  return { filePath, url: rawUrlFor(filePath) };
 }
 
 // ---------- API ----------
@@ -181,11 +237,39 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
-app.post("/api/products", requireAdmin, async (req, res) => {
+/**
+ * POST /api/products (multipart/form-data)
+ * Fields:
+ *   name, description, category, gender, price
+ * File:
+ *   image (file)
+ */
+app.post("/api/products", requireAdmin, upload.single("image"), async (req, res) => {
   try {
+    // multer parsed fields into req.body, file into req.file
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: "Image file is required (field name: image)" });
+
+    const name = (req.body?.name || "").trim();
+    const description = (req.body?.description || "").trim();
+    const category = (req.body?.category || "").trim();
+    const gender = (req.body?.gender || "").trim();
+    const price = Number(req.body?.price);
+
+    // Upload image to GitHub and get URL
+    const uploaded = await uploadImageToGitHub(file.buffer, file.originalname, file.mimetype);
+
     const { sha, products: existing } = await getProductsFileFromGitHub();
 
-    const incoming = normalizeProduct(req.body?.product || req.body);
+    const incoming = normalizeProduct({
+      name,
+      description,
+      category,
+      gender,
+      price,
+      image: uploaded.url, // store URL, not base64
+    });
+
     const msg = validateProduct(incoming);
     if (msg) return res.status(400).json({ error: msg });
 
@@ -195,36 +279,6 @@ app.post("/api/products", requireAdmin, async (req, res) => {
     res.json({ ok: true, product: incoming, count: updated.length });
   } catch (err) {
     res.status(500).json({ error: "Failed to add product", details: String(err.message || err) });
-  }
-});
-
-app.put("/api/products/:id", requireAdmin, async (req, res) => {
-  try {
-    const id = String(req.params.id);
-    const { sha, products: existing } = await getProductsFileFromGitHub();
-
-    const idx = existing.findIndex((p) => String(p.id) === id);
-    if (idx === -1) return res.status(404).json({ error: "Product not found" });
-
-    const current = existing[idx];
-    const patch = req.body?.product || req.body;
-
-    const updatedProduct = normalizeProduct({
-      ...current,
-      ...patch,
-      id: current.id,
-      createdAt: current.createdAt,
-    });
-
-    const msg = validateProduct(updatedProduct);
-    if (msg) return res.status(400).json({ error: msg });
-
-    existing[idx] = updatedProduct;
-    await putProductsFileToGitHub(existing, sha);
-
-    res.json({ ok: true, product: updatedProduct });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to update product", details: String(err.message || err) });
   }
 });
 
@@ -246,5 +300,5 @@ app.delete("/api/products/:id", requireAdmin, async (req, res) => {
 // ---------- Start ----------
 app.listen(PORT, () => {
   console.log(`✅ Backend running: http://localhost:${PORT}`);
-  console.log(`✅ Public dir: ${publicDir}`);
+  console.log(`✅ Serving /public: ${publicDir}`);
 });
