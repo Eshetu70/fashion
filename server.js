@@ -1,68 +1,49 @@
-/**
- * server.js (Node 18+)
- * - Serves frontend from /public
- * - API saves products.json in GitHub
- * - Uploads images as separate files in GitHub (/public/uploads)
- *
- * ENV:
- *  GITHUB_TOKEN
- *  GITHUB_USERNAME
- *  GITHUB_REPO
- *  PRODUCTS_FILE=products.json
- *  GITHUB_BRANCH=main
- *  ADMIN_API_KEY=...
- */
-
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
-const fs = require("fs");
+const mongoose = require("mongoose");
+const multer = require("multer");
 const crypto = require("crypto");
-
-if (typeof fetch !== "function") throw new Error("Use Node.js 18+ (global fetch required).");
+const nodemailer = require("nodemailer");
 
 const app = express();
-app.use(cors());
-app.options("*", cors());
-app.use(express.json({ limit: "25mb" }));
 
-// Serve frontend
-const publicDir = path.join(__dirname, "public");
-const indexFile = path.join(publicDir, "index.html");
-app.use(express.static(publicDir));
+// ✅ CORS
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "x-admin-key"],
+}));
+app.options(/.*/, cors());
 
-app.get("/", (req, res) => {
-  if (fs.existsSync(indexFile)) return res.sendFile(indexFile);
-  res.status(200).send("Backend running, but public/index.html missing.");
-});
+// JSON for non-multipart endpoints
+app.use(express.json({ limit: "2mb" }));
 
-app.get("/health", (req, res) => res.json({ ok: true }));
-
-// ---- ENV ----
 const PORT = process.env.PORT || 3000;
+const { MONGODB_URI, ADMIN_API_KEY, EMAIL_FROM, EMAIL_TO, GMAIL_APP_PASSWORD } = process.env;
 
-const {
-  GITHUB_TOKEN,
-  GITHUB_USERNAME,
-  GITHUB_REPO,
-  PRODUCTS_FILE = "products.json",
-  GITHUB_BRANCH = "main",
-  ADMIN_API_KEY,
-} = process.env;
+if (!MONGODB_URI) console.error("❌ Missing MONGODB_URI in env");
+if (!ADMIN_API_KEY) console.error("❌ Missing ADMIN_API_KEY in env");
 
-console.log("ENV CHECK:", {
-  GITHUB_USERNAME: !!GITHUB_USERNAME,
-  GITHUB_REPO: !!GITHUB_REPO,
-  PRODUCTS_FILE,
-  GITHUB_BRANCH,
-  GITHUB_TOKEN: !!GITHUB_TOKEN,
-  ADMIN_API_KEY: !!ADMIN_API_KEY,
+// -------------------
+// MongoDB Connect
+// -------------------
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch((err) => console.error("❌ MongoDB error:", err.message));
+
+// -------------------
+// Multer (memory)
+// -------------------
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
 });
 
-const GH_API_BASE = "https://api.github.com";
-
-// ---- Helpers ----
+// -------------------
+// Admin Auth
+// -------------------
 function requireAdmin(req, res, next) {
   const key = req.header("x-admin-key");
   if (!ADMIN_API_KEY) return res.status(500).json({ error: "Server missing ADMIN_API_KEY" });
@@ -70,209 +51,286 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-function ghHeaders() {
-  if (!GITHUB_TOKEN) throw new Error("Missing GITHUB_TOKEN");
-  return {
-    Authorization: `Bearer ${GITHUB_TOKEN}`,
-    Accept: "application/vnd.github+json",
-    "User-Agent": "fashion-backend",
-  };
-}
-
-// ✅ IMPORTANT FIX: keep slashes, encode each segment only
-function encodePath(filePath) {
-  return filePath.split("/").map(encodeURIComponent).join("/");
-}
-
-function contentUrl(filePath) {
-  return `${GH_API_BASE}/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${encodePath(
-    filePath
-  )}?ref=${encodeURIComponent(GITHUB_BRANCH)}`;
-}
-
-function repoPutUrl(filePath) {
-  return `${GH_API_BASE}/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${encodePath(filePath)}`;
-}
-
-function rawUrl(filePath) {
-  return `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filePath}`;
-}
-
-function toBase64Utf8(str) {
-  return Buffer.from(str, "utf8").toString("base64");
-}
-
-function fromBase64Utf8(b64) {
-  return Buffer.from(b64, "base64").toString("utf8");
-}
-
-function normalizeProduct(p) {
-  const obj = p && typeof p === "object" ? p : {};
-  const id = obj.id ?? (Date.now().toString() + "-" + crypto.randomBytes(3).toString("hex"));
-  return {
-    id,
-    name: String(obj.name || "").trim(),
-    description: String(obj.description || "").trim(),
-    category: String(obj.category || "").trim(),
-    gender: String(obj.gender || "").trim(),
-    price: Number(obj.price) || 0,
-    image: String(obj.image || "").trim(), // dataURL or URL
-    createdAt: obj.createdAt || new Date().toISOString(),
-  };
-}
-
-function validateProductBase(p) {
-  if (!p.name) return "Product name is required";
-  if (!p.category) return "Category is required";
-  if (!p.gender) return "Gender is required";
-  if (typeof p.price !== "number" || Number.isNaN(p.price)) return "Price must be a number";
-  if (!p.image) return "Image is required";
-  return null;
-}
-
-function parseDataUrl(dataUrl) {
-  const m = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(dataUrl || "");
-  if (!m) return null;
-  return { mime: m[1], b64: m[2] };
-}
-
+// -------------------
+// Helpers
+// -------------------
 function extFromMime(mime) {
-  if (mime === "image/jpeg") return "jpg";
+  if (mime === "image/jpeg") return "jpeg";
   if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
   if (mime === "image/gif") return "gif";
   return "png";
 }
 
-// ---- GitHub: products.json ----
-async function getProductsFileFromGitHub() {
-  const res = await fetch(contentUrl(PRODUCTS_FILE), { headers: ghHeaders() });
-
-  if (res.status === 404) return { sha: null, products: [] };
-
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`GitHub GET products failed: ${res.status} ${txt}`);
-  }
-
-  const data = await res.json();
-  const decoded = fromBase64Utf8(data.content || "");
-
-  let products = [];
-  try {
-    const parsed = JSON.parse(decoded);
-    products = Array.isArray(parsed) ? parsed : [];
-  } catch {
-    products = [];
-  }
-
-  return { sha: data.sha, products };
+function makeId() {
+  return Date.now().toString() + "-" + crypto.randomBytes(3).toString("hex");
 }
 
-async function putProductsFileToGitHub(products, sha) {
-  const res = await fetch(repoPutUrl(PRODUCTS_FILE), {
-    method: "PUT",
-    headers: { ...ghHeaders(), "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: `Update ${PRODUCTS_FILE} - ${new Date().toISOString()}`,
-      content: toBase64Utf8(JSON.stringify(products, null, 2)),
-      branch: GITHUB_BRANCH,
-      ...(sha ? { sha } : {}),
-    }),
+function validateFields(body) {
+  if (!body.name) return "Product name is required";
+  if (!body.category) return "Category is required";
+  if (!body.gender) return "Gender is required";
+  const price = Number(body.price);
+  if (Number.isNaN(price)) return "Price must be a number";
+  return null;
+}
+
+function money(n) {
+  return (Number(n) || 0).toFixed(0);
+}
+
+function escape(s) {
+  return String(s ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+// -------------------
+// Email Sender
+// -------------------
+function buildTransporter() {
+  if (!EMAIL_FROM || !GMAIL_APP_PASSWORD) return null;
+
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: EMAIL_FROM,
+      pass: GMAIL_APP_PASSWORD,
+    },
   });
-
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`GitHub PUT products failed: ${res.status} ${txt}`);
-  }
-
-  return res.json();
 }
 
-// ---- GitHub: upload image ----
-async function uploadImageToGitHub(dataUrl, productId) {
-  if (dataUrl.startsWith("http")) return dataUrl;
-
-  const parsed = parseDataUrl(dataUrl);
-  if (!parsed) throw new Error("Invalid image format. Must be a base64 data URL.");
-
-  const { mime, b64 } = parsed;
-  const ext = extFromMime(mime);
-
-  const filePath = `public/uploads/${productId}-${Date.now()}.${ext}`;
-
-  // Rough size guard
-  const approxBytes = Math.floor((b64.length * 3) / 4);
-  if (approxBytes > 1_500_000) {
-    throw new Error("Image too large. Please upload a smaller image (try under ~1MB).");
+async function sendOrderEmail(order) {
+  const transporter = buildTransporter();
+  if (!transporter) {
+    console.log("📧 Email not configured. Missing EMAIL_FROM or GMAIL_APP_PASSWORD.");
+    return;
   }
 
-  const res = await fetch(repoPutUrl(filePath), {
-    method: "PUT",
-    headers: { ...ghHeaders(), "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: `Upload image ${filePath}`,
-      content: b64,
-      branch: GITHUB_BRANCH,
-    }),
-  });
+  const to = EMAIL_TO || EMAIL_FROM;
 
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`GitHub PUT image failed: ${res.status} ${txt}`);
-  }
+  const itemsHtml = (order.items || [])
+    .map(
+      (i) => `
+      <tr>
+        <td style="padding:8px;border-bottom:1px solid #eee;">${escape(i.name)}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee; text-align:center;">${i.qty}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee; text-align:right;">${money(i.price)} ETB</td>
+        <td style="padding:8px;border-bottom:1px solid #eee; text-align:right;">${money(i.subtotal)} ETB</td>
+      </tr>`
+    )
+    .join("");
 
-  return rawUrl(filePath);
+  const telebirrSection =
+    order.payment?.method === "telebirr"
+      ? `
+        <p><b>Telebirr Txn ID:</b> ${escape(order.payment.telebirrTxnId || "")}</p>
+        <p><b>Proof Uploaded:</b> ${order.payment.proofImage ? "YES" : "NO"}</p>
+      `
+      : "";
+
+  const subject = `🧾 New Order: ${order.orderId} | Total ${money(order.total)} ETB`;
+
+  const html = `
+    <div style="font-family:Arial,sans-serif; line-height:1.5;">
+      <h2>New Order Received ✅</h2>
+      <p><b>Order ID:</b> ${escape(order.orderId)}</p>
+      <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
+
+      <hr/>
+
+      <h3>Customer Info</h3>
+      <p><b>Name:</b> ${escape(order.customer.fullName)}</p>
+      <p><b>Phone:</b> ${escape(order.customer.phone)}</p>
+      <p><b>Email:</b> ${escape(order.customer.email || "")}</p>
+      <p><b>Address:</b> ${escape(order.customer.address)}</p>
+
+      <hr/>
+
+      <h3>Items</h3>
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:8px; border-bottom:2px solid #ddd;">Item</th>
+            <th style="text-align:center; padding:8px; border-bottom:2px solid #ddd;">Qty</th>
+            <th style="text-align:right; padding:8px; border-bottom:2px solid #ddd;">Price</th>
+            <th style="text-align:right; padding:8px; border-bottom:2px solid #ddd;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+
+      <p style="text-align:right;"><b>Total:</b> ${money(order.total)} ETB</p>
+
+      <hr/>
+
+      <h3>Payment</h3>
+      <p><b>Method:</b> ${escape(order.payment.method)}</p>
+      <p><b>Status:</b> ${escape(order.payment.status)}</p>
+      ${telebirrSection}
+    </div>
+  `;
+
+  await transporter.sendMail({ from: EMAIL_FROM, to, subject, html });
+  console.log("📧 Order email sent to:", to);
 }
 
-// ---- API ----
+// -------------------
+// MongoDB Schemas
+// -------------------
+const productSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    description: { type: String, default: "" },
+    category: { type: String, required: true },
+    gender: { type: String, required: true },
+    price: { type: Number, required: true },
+    image: { type: String, required: true }, // base64 data URL
+    createdAt: { type: Date, default: Date.now },
+  },
+  { collection: "fashion" }
+);
+
+const orderSchema = new mongoose.Schema(
+  {
+    orderId: { type: String, required: true, unique: true },
+    items: { type: Array, default: [] },
+    total: { type: Number, required: true },
+    customer: {
+      fullName: String,
+      phone: String,
+      email: String,
+      address: String,
+      note: String,
+    },
+    payment: {
+      method: String, // cash | card | telebirr
+      status: String, // pending | submitted
+      telebirrTxnId: String,
+      proofImage: String, // base64 dataURL if uploaded
+    },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { collection: "orders" }
+);
+
+const Product = mongoose.model("Product", productSchema);
+const Order = mongoose.model("Order", orderSchema);
+
+// -------------------
+// Routes
+// -------------------
+app.get("/", (req, res) => res.send("✅ Fashion backend running"));
+app.get("/health", (req, res) => res.json({ ok: true }));
+
+// Products
 app.get("/api/products", async (req, res) => {
   try {
-    const { products } = await getProductsFileFromGitHub();
+    const products = await Product.find({}).sort({ createdAt: -1 }).lean();
     res.json(products);
   } catch (err) {
-    res.status(500).json({ error: "Failed to load products", details: String(err.message || err) });
+    res.status(500).json({ error: "Failed to load products", details: err.message });
   }
 });
 
-app.post("/api/products", requireAdmin, async (req, res) => {
+app.post("/api/products", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const raw = (req.body && (req.body.product || req.body)) || {};
-    const product = normalizeProduct(raw);
-
-    const msg = validateProductBase(product);
+    const msg = validateFields(req.body);
     if (msg) return res.status(400).json({ error: msg });
+    if (!req.file) return res.status(400).json({ error: "Image file is required" });
 
-    // Upload image first → replace with URL
-    product.image = await uploadImageToGitHub(product.image, product.id);
+    const mime = req.file.mimetype || "image/png";
+    const ext = extFromMime(mime);
+    const b64 = req.file.buffer.toString("base64");
+    const dataUrl = `data:image/${ext};base64,${b64}`;
 
-    const { sha, products: existing } = await getProductsFileFromGitHub();
-    const list = Array.isArray(existing) ? existing : [];
-    const updated = [product, ...list];
+    const product = {
+      id: makeId(),
+      name: String(req.body.name).trim(),
+      description: String(req.body.description || "").trim(),
+      category: String(req.body.category).trim(),
+      gender: String(req.body.gender).trim(),
+      price: Number(req.body.price) || 0,
+      image: dataUrl,
+      createdAt: new Date(),
+    };
 
-    await putProductsFileToGitHub(updated, sha);
-
-    res.json({ ok: true, product, count: updated.length });
+    const saved = await Product.create(product);
+    res.json({ ok: true, product: saved });
   } catch (err) {
-    // ✅ return full detail to frontend
-    res.status(500).json({ error: "Failed to add product", details: String(err.message || err) });
+    res.status(500).json({ error: "Failed to add product", details: err.message });
   }
 });
 
 app.delete("/api/products/:id", requireAdmin, async (req, res) => {
   try {
     const id = String(req.params.id);
-    const { sha, products: existing } = await getProductsFileFromGitHub();
-    const list = Array.isArray(existing) ? existing : [];
-
-    const updated = list.filter((p) => String(p.id) !== id);
-    if (updated.length === list.length) return res.status(404).json({ error: "Product not found" });
-
-    await putProductsFileToGitHub(updated, sha);
-    res.json({ ok: true, deletedId: id, count: updated.length });
+    const deleted = await Product.findOneAndDelete({ id }).lean();
+    if (!deleted) return res.status(404).json({ error: "Product not found" });
+    res.json({ ok: true, deletedId: id });
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete product", details: String(err.message || err) });
+    res.status(500).json({ error: "Failed to delete product", details: err.message });
   }
 });
 
+// ✅ Checkout orders
+app.post("/api/orders/checkout", async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    if (!items.length) return res.status(400).json({ error: "Cart is empty" });
+
+    const total = Number(payload.total) || 0;
+    if (total <= 0) return res.status(400).json({ error: "Invalid total" });
+
+    const customer = payload.customer || {};
+    if (!customer.fullName || !customer.phone || !customer.address) {
+      return res.status(400).json({ error: "Customer name, phone, and address are required" });
+    }
+
+    const payment = payload.payment || {};
+    if (!payment.method) return res.status(400).json({ error: "Payment method required" });
+
+    // If telebirr method, require txn id + proof
+    if (payment.method === "telebirr") {
+      if (!payment.telebirrTxnId) return res.status(400).json({ error: "Telebirr transaction ID required" });
+      if (!payment.proofImage) return res.status(400).json({ error: "Telebirr proof image required" });
+    }
+
+    const order = {
+      orderId: "ORD-" + makeId(),
+      items,
+      total,
+      customer: {
+        fullName: String(customer.fullName || "").trim(),
+        phone: String(customer.phone || "").trim(),
+        email: String(customer.email || "").trim(),
+        address: String(customer.address || "").trim(),
+        note: String(customer.note || "").trim(),
+      },
+      payment: {
+        method: String(payment.method || "").trim(),
+        status: payment.method === "cash" ? "pending" : "submitted",
+        telebirrTxnId: String(payment.telebirrTxnId || "").trim(),
+        proofImage: String(payment.proofImage || ""), // base64
+      },
+      createdAt: new Date(),
+    };
+
+    const saved = await Order.create(order);
+
+    // ✅ Send email to you
+    sendOrderEmail(saved).catch((e) => console.error("Email send failed:", e.message));
+
+    res.json({ ok: true, order: saved });
+  } catch (err) {
+    res.status(500).json({ error: "Checkout failed", details: err.message });
+  }
+});
+
+// -------------------
+// Start server
+// -------------------
 app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
