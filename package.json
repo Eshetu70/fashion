@@ -1,0 +1,25 @@
+{
+  "name": "fashion",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eshetu70/fashion.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Eshetu70/fashion/issues"
+  },
+  "homepage": "https://github.com/Eshetu70/fashion#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1"
+  }
+}
