@@ -27,34 +27,26 @@ if (typeof fetch !== "function") {
 }
 
 const app = express();
+
+// ✅ CORS (allow your frontend anywhere; tighten later if you want)
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
 
-// ---------- Static frontend ----------
+// ✅ Serve static frontend
 const publicDir = path.join(__dirname, "public");
 const indexFile = path.join(publicDir, "index.html");
 
-console.log("PUBLIC DIR:", publicDir);
-console.log("INDEX FILE:", indexFile);
-console.log("INDEX EXISTS:", fs.existsSync(indexFile));
-
 app.use(express.static(publicDir));
 
+// ✅ Home route
 app.get("/", (req, res) => {
-  res.sendFile(indexFile);
+  if (fs.existsSync(indexFile)) return res.sendFile(indexFile);
+  return res
+    .status(200)
+    .send("Backend is running, but index.html is missing in /public.");
 });
 
 app.get("/health", (req, res) => res.json({ ok: true }));
-
-app.get("/debug", (req, res) => {
-  res.json({
-    cwd: process.cwd(),
-    __dirname,
-    publicDir,
-    indexFile,
-    indexExists: fs.existsSync(indexFile),
-  });
-});
 
 // ---------- ENV ----------
 const PORT = process.env.PORT || 3000;
@@ -106,10 +98,7 @@ function fromBase64Utf8(b64) {
 }
 
 function normalizeProduct(p) {
-  const id =
-    p.id ??
-    (Date.now().toString() + "-" + crypto.randomBytes(3).toString("hex"));
-
+  const id = p.id ?? (Date.now().toString() + "-" + crypto.randomBytes(3).toString("hex"));
   return {
     id,
     name: String(p.name || "").trim(),
@@ -257,7 +246,5 @@ app.delete("/api/products/:id", requireAdmin, async (req, res) => {
 // ---------- Start ----------
 app.listen(PORT, () => {
   console.log(`✅ Backend running: http://localhost:${PORT}`);
-  console.log(`✅ Frontend:       http://localhost:${PORT}/`);
-  console.log(`✅ API:            http://localhost:${PORT}/api/products`);
-  console.log(`✅ Debug:          http://localhost:${PORT}/debug`);
+  console.log(`✅ Public dir: ${publicDir}`);
 });
