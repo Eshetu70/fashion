@@ -7,118 +7,137 @@
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #1a1a1a; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #1a1a1a; background:#fff; }
 
     .header { background: linear-gradient(135deg, #2d3436 0%, #000000 100%); color: white; padding: 1rem 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; gap:1rem; }
     .logo { font-size: 1.8rem; font-weight: 800; color: white; text-decoration: none; cursor: pointer; user-select:none; }
-    .nav-menu { display: flex; list-style: none; gap: 2rem; align-items: center; }
-    .nav-menu a { color: white; text-decoration: none; font-weight: 500; cursor: pointer; }
+    .nav-menu { display: flex; list-style: none; gap: 1.25rem; align-items: center; flex-wrap:wrap; }
+    .nav-menu a { color: white; text-decoration: none; font-weight: 600; cursor: pointer; opacity: 0.95; }
+    .nav-menu a:hover { opacity: 1; text-decoration: underline; }
 
-    .cart-icon { position: relative; font-size: 1.5rem; cursor: pointer; user-select: none; }
+    .pill {
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      display:inline-flex;
+      align-items:center;
+      gap:0.5rem;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pill:hover { border-color: rgba(255,255,255,0.5); }
+
+    .cart-icon { position: relative; font-size: 1.25rem; cursor: pointer; user-select: none; }
     .cart-count { position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
 
-    .hero { background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23667eea" width="1200" height="600"/></svg>'); background-size: cover; color: white; padding: 6rem 2rem 4rem; text-align: center; }
-    .hero h1 { font-size: 3.5rem; margin-bottom: 1rem; font-weight: 800; }
+    .hero { background: linear-gradient(135deg, rgba(0,0,0,0.62), rgba(0,0,0,0.35)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23667eea" width="1200" height="600"/></svg>'); background-size: cover; color: white; padding: 6rem 2rem 4rem; text-align: center; }
+    .hero h1 { font-size: 3.2rem; margin-bottom: 0.8rem; font-weight: 900; }
+    .hero p { font-size: 1.05rem; opacity:0.95; }
 
-    .filter-section { background: #f8f9fa; padding: 1.5rem; border-bottom: 2px solid #ddd; }
-    .filter-container { max-width: 1400px; margin: 0 auto; display: flex; gap: 1rem; flex-wrap: wrap; }
-    .filter-btn { padding: 0.7rem 1.3rem; border: 2px solid #2d3436; background: white; color: #2d3436; border-radius: 25px; cursor: pointer; font-weight: 600; }
+    .filter-section { background: #f8f9fa; padding: 1.1rem; border-bottom: 2px solid #ddd; }
+    .filter-container { max-width: 1400px; margin: 0 auto; display: flex; gap: 0.75rem; flex-wrap: wrap; padding: 0 0.5rem; }
+    .filter-btn { padding: 0.65rem 1.15rem; border: 2px solid #2d3436; background: white; color: #2d3436; border-radius: 25px; cursor: pointer; font-weight: 800; }
     .filter-btn.active { background: #2d3436; color: white; }
 
-    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; max-width: 1400px; margin: 3rem auto; padding: 0 2rem; }
-    .product-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); transition: all 0.3s; }
-    .product-card:hover { transform: translateY(-10px); }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.6rem; max-width: 1400px; margin: 2rem auto 3rem; padding: 0 2rem; }
+    .product-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); transition: all 0.25s; }
+    .product-card:hover { transform: translateY(-6px); }
     .product-image { width: 100%; height: 320px; overflow: hidden; background:#f1f1f1; }
     .product-image img { width: 100%; height: 100%; object-fit: cover; }
-    .product-details { padding: 1.5rem; }
-    .product-category { font-size: 0.85rem; color: #636e72; text-transform: uppercase; font-weight: 600; }
-    .product-name { font-size: 1.2rem; font-weight: 700; margin: 0.5rem 0; }
-    .product-price { font-size: 1.4rem; font-weight: 800; color: #e74c3c; margin-bottom: 1rem; }
-    .add-to-cart-btn { width: 100%; padding: 0.9rem; background: #2d3436; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    .product-details { padding: 1.1rem 1.2rem 1.25rem; }
+    .product-category { font-size: 0.82rem; color: #636e72; text-transform: uppercase; font-weight: 800; }
+    .product-name { font-size: 1.15rem; font-weight: 900; margin: 0.35rem 0; }
+    .product-price { font-size: 1.35rem; font-weight: 900; color: #e74c3c; margin: 0.8rem 0 0.9rem; }
+    .btn { border:none; border-radius:10px; font-weight:900; cursor:pointer; }
+    .btn-dark { background:#2d3436; color:#fff; padding:0.85rem; width:100%; }
+    .btn-dark:hover { filter:brightness(1.05); }
+    .btn-primary { padding: 0.85rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; border-radius:10px; font-weight:900; cursor:pointer; }
+    .btn-danger { padding: 0.7rem 1rem; background:#e74c3c; color:white; border:none; border-radius:10px; font-weight:900; cursor:pointer; }
 
     .hidden { display:none !important; }
-    .loading { text-align:center; padding:3rem; font-size:1.2rem; color:#636e72; }
+    .loading { text-align:center; padding:3rem; font-size:1.1rem; color:#636e72; }
 
-    .admin-panel { max-width:800px; margin:3rem auto; padding:2rem; background:white; border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.1); }
-    .image-upload-area { border:3px dashed #ddd; border-radius:12px; padding:2rem; text-align:center; cursor:pointer; }
-    .image-preview { max-width:100%; max-height:300px; margin-top:1rem; border-radius:8px; }
+    .panel { max-width: 1100px; margin: 2rem auto 3rem; padding: 0 2rem; }
+    .card { background:#fff; border-radius:18px; box-shadow:0 10px 35px rgba(0,0,0,0.08); padding:1.25rem; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; }
+    @media (max-width:900px){ .row{ grid-template-columns:1fr; } }
 
-    .product-list { margin-top:2rem; }
-    .product-item { background:white; padding:1.5rem; border-radius:10px; margin-bottom:1rem; box-shadow:0 3px 10px rgba(0,0,0,0.1); display:flex; gap:1rem; align-items:center; }
-    .product-item-image { width:100px; height:100px; border-radius:8px; overflow:hidden; background:#f1f1f1; }
-    .product-item-image img { width:100%; height:100%; object-fit:cover; }
-    .product-item-details { flex:1; }
-
-    .btn-primary { padding: 0.9rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
-    .btn-danger { padding: 0.7rem 1rem; background:#e74c3c; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
-    .btn-secondary { padding: 0.7rem 1rem; background:#2d3436; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
-
-    .notice {
-      max-width: 1400px;
-      margin: 1rem auto 0;
-      padding: 0 2rem;
-      color: #2d3436;
-      font-size: 0.95rem;
-    }
-    .notice code{ background:#f1f1f1; padding:0.15rem 0.35rem; border-radius:6px; }
-
+    label{ font-weight:800; font-size:0.95rem; }
     input, textarea, select {
       width:100%;
-      padding:0.8rem;
+      padding:0.85rem;
       border:2px solid #ddd;
-      border-radius:8px;
+      border-radius:10px;
       font-size: 1rem;
       outline: none;
     }
     input:focus, textarea:focus, select:focus { border-color:#667eea; }
 
-    /* MODALS */
+    /* Admin */
+    .admin-panel { max-width:900px; margin:3rem auto; padding:2rem; background:white; border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.1); }
+    .image-upload-area { border:3px dashed #ddd; border-radius:12px; padding:2rem; text-align:center; cursor:pointer; }
+    .image-preview { max-width:100%; max-height:280px; margin-top:1rem; border-radius:10px; }
+
+    .product-list { margin-top:1.5rem; }
+    .product-item { background:white; padding:1rem; border-radius:14px; margin-bottom:1rem; box-shadow:0 3px 10px rgba(0,0,0,0.08); display:flex; gap:1rem; align-items:center; }
+    .product-item-image { width:92px; height:92px; border-radius:10px; overflow:hidden; background:#f1f1f1; }
+    .product-item-image img { width:100%; height:100%; object-fit:cover; }
+    .product-item-details { flex:1; }
+
+    /* Modal */
     .modal-backdrop{
-      position: fixed; inset: 0;
+      position:fixed; inset:0;
       background: rgba(0,0,0,0.55);
       display:flex; align-items:center; justify-content:center;
-      padding: 1rem;
-      z-index: 9999;
+      padding:1rem;
+      z-index:2000;
     }
     .modal{
-      width: min(900px, 100%);
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-      overflow: hidden;
+      width: min(520px, 100%);
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.25);
+      padding:1.25rem;
     }
-    .modal-header{
-      padding: 1rem 1.25rem;
-      background: #2d3436;
-      color: #fff;
-      display:flex; justify-content:space-between; align-items:center;
-    }
-    .modal-body{ padding: 1.25rem; }
-    .modal-footer{ padding: 1rem 1.25rem; display:flex; gap:0.75rem; justify-content:flex-end; border-top:1px solid #eee; }
-    .xbtn{ cursor:pointer; font-size: 1.2rem; user-select:none; }
+    .modal h2{ margin-bottom:0.35rem; }
+    .modal .muted{ color:#636e72; font-size:0.95rem; margin-bottom:1rem; }
+    .modal .actions{ display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:1rem; }
+    .link{ color:#667eea; font-weight:900; cursor:pointer; }
+    .hr{ height:1px; background:#eee; margin:1rem 0; }
 
-    .cart-row{
-      display:grid;
-      grid-template-columns: 70px 1fr 110px 140px 40px;
-      gap: 0.75rem;
+    /* Cart drawer */
+    .drawer-backdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,0.45);
+      z-index:2500;
+      display:flex;
+      justify-content:flex-end;
+    }
+    .drawer{
+      width:min(420px, 100%);
+      height:100%;
+      background:#fff;
+      padding:1rem;
+      overflow:auto;
+      box-shadow:-20px 0 60px rgba(0,0,0,0.2);
+    }
+    .cart-item{
+      display:flex; gap:0.75rem;
+      padding:0.75rem 0;
+      border-bottom:1px solid #eee;
       align-items:center;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #eee;
     }
-    .cart-row img{ width:70px; height:70px; object-fit:cover; border-radius:10px; background:#f1f1f1; }
+    .cart-thumb{ width:72px; height:72px; border-radius:12px; overflow:hidden; background:#f1f1f1; flex:0 0 auto; }
+    .cart-thumb img{ width:100%; height:100%; object-fit:cover; }
     .qty{
-      display:flex; gap: 0.5rem; align-items:center; justify-content:center;
+      display:flex; align-items:center; gap:0.5rem; margin-top:0.35rem;
     }
-    .qty button{
-      width:32px; height:32px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer;
-    }
+    .qty button{ width:34px; height:34px; border-radius:10px; border:1px solid #ddd; background:#fff; font-weight:900; cursor:pointer; }
+    .qty span{ font-weight:900; min-width:24px; text-align:center; display:inline-block; }
 
-    @media (max-width:768px){
-      .hero h1{font-size:2.3rem;}
-      .cart-row{ grid-template-columns: 60px 1fr 90px 40px; }
-      .hide-sm{ display:none; }
-    }
+    @media (max-width:768px){ .hero h1{font-size:2.2rem;} .products-grid{ padding:0 1rem; } .nav-container{ padding:0 1rem; } }
   </style>
 </head>
 
@@ -126,12 +145,21 @@
   <header class="header">
     <nav class="nav-container">
       <a class="logo" onclick="showShop()">👗 Fashion Boutique</a>
+
       <ul class="nav-menu">
         <li><a onclick="showShop()">Shop</a></li>
+        <li><a onclick="openOrders()">My Orders</a></li>
         <li><a onclick="openAdmin()">Admin</a></li>
+
         <li>
-          <div class="cart-icon" onclick="openCart()">
-            🛒 <span class="cart-count" id="cartCount">0</span>
+          <div class="pill" onclick="openAuth()">
+            👤 <span id="authLabel">Login</span>
+          </div>
+        </li>
+
+        <li>
+          <div class="pill" onclick="openCart()">
+            🛒 Cart <span class="cart-count" id="cartCount">0</span>
           </div>
         </li>
       </ul>
@@ -142,10 +170,6 @@
     <h1>Discover Your Perfect Style</h1>
     <p>Premium Fashion Collection - Cultural & Modern Clothing</p>
   </section>
-
-  <div class="notice">
-    Backend: <code id="backendLabel"></code>
-  </div>
 
   <div class="filter-section" id="shopSection">
     <div class="filter-container">
@@ -160,104 +184,32 @@
   <div id="loadingProducts" class="loading">Loading products...</div>
   <div class="products-grid" id="productsGrid"></div>
 
-  <!-- CART MODAL -->
-  <div id="cartModal" class="modal-backdrop hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <div><b>🛒 Your Cart</b></div>
-        <div class="xbtn" onclick="closeCart()">✖</div>
+  <!-- ORDERS PAGE -->
+  <div id="ordersSection" class="panel hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <h2>📦 My Orders</h2>
+        <button class="btn-primary" onclick="showShop()">Back to Shop</button>
       </div>
-      <div class="modal-body" id="cartBody"></div>
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeCart()">Continue Shopping</button>
-        <button class="btn-primary" onclick="openCheckout()">Checkout</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CHECKOUT MODAL -->
-  <div id="checkoutModal" class="modal-backdrop hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <div><b>✅ Checkout</b></div>
-        <div class="xbtn" onclick="closeCheckout()">✖</div>
-      </div>
-      <div class="modal-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-          <div>
-            <label><b>Full Name *</b></label>
-            <input id="cFullName" placeholder="Full name">
-          </div>
-          <div>
-            <label><b>Phone *</b></label>
-            <input id="cPhone" placeholder="Phone number">
-          </div>
-        </div>
-
-        <div style="margin-top:1rem;">
-          <label><b>Email</b></label>
-          <input id="cEmail" placeholder="Optional email">
-        </div>
-
-        <div style="margin-top:1rem;">
-          <label><b>Address *</b></label>
-          <textarea id="cAddress" rows="2" placeholder="Delivery address"></textarea>
-        </div>
-
-        <div style="margin-top:1rem;">
-          <label><b>Note</b></label>
-          <textarea id="cNote" rows="2" placeholder="Optional note"></textarea>
-        </div>
-
-        <hr style="margin:1rem 0;">
-
-        <div>
-          <label><b>Payment Method *</b></label>
-          <select id="payMethod" onchange="togglePaymentFields()">
-            <option value="cash">Cash on Delivery</option>
-            <option value="card">Card</option>
-            <option value="telebirr">Telebirr</option>
-          </select>
-        </div>
-
-        <div id="cardInfo" class="hidden" style="margin-top:1rem;">
-          <p style="color:#636e72;margin-bottom:0.5rem;">
-            ✅ Card payment can be integrated later (Stripe). For now we record as <b>submitted</b>.
-          </p>
-        </div>
-
-        <div id="telebirrInfo" class="hidden" style="margin-top:1rem;">
-          <label><b>Telebirr Transaction ID *</b></label>
-          <input id="teleTxnId" placeholder="Enter Telebirr Txn ID">
-          <div style="margin-top:0.8rem;">
-            <label><b>Upload Telebirr Confirmation Screenshot *</b></label>
-            <input type="file" id="teleProof" accept="image/*">
-            <p style="color:#636e72;font-size:0.9rem;margin-top:0.4rem;">Max 2MB</p>
-          </div>
-        </div>
-
-        <div style="margin-top:1rem; display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-size:1.1rem;"><b>Total:</b> <span id="checkoutTotal">0</span> ETB</div>
-          <div id="checkoutStatus" style="color:#636e72;"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeCheckout()">Cancel</button>
-        <button class="btn-primary" id="placeOrderBtn" onclick="placeOrder()">Place Order</button>
-      </div>
+      <p style="color:#636e72;margin-top:0.25rem;">Login required to view your order history.</p>
+      <div id="ordersList" style="margin-top:1rem;"></div>
     </div>
   </div>
 
   <!-- ADMIN -->
   <div id="adminSection" class="hidden">
     <div class="admin-panel">
-      <h2 style="margin-bottom: 0.75rem;">Admin</h2>
+      <h2 style="margin-bottom: 0.5rem;">Admin</h2>
 
-      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">
         <button class="btn-primary" onclick="setAdminKey()">Set Admin Key</button>
         <button class="btn-danger" onclick="logoutAdmin()">Logout</button>
         <button class="btn-primary" onclick="testAdminKey()">Test Admin Key</button>
       </div>
+
+      <p style="color:#636e72;margin-bottom:1.25rem;">
+        ✅ Products and images are stored in MongoDB Atlas.
+      </p>
 
       <h3 style="margin-bottom:1rem;">Add New Product</h3>
 
@@ -311,454 +263,817 @@
     </div>
   </div>
 
-<script>
-  // =======================
-  // CONFIG
-  // =======================
-  const API_BASE =
-    (location.hostname === "localhost" || location.hostname === "127.0.0.1")
-      ? "http://localhost:3000"
-      : "https://fashion-2tif.onrender.com";
-
-  document.getElementById("backendLabel").textContent = API_BASE;
-
-  // =======================
-  // STATE
-  // =======================
-  let products = [];
-  let currentFilter = "all";
-  let cart = JSON.parse(localStorage.getItem("FASHION_CART") || "[]");
-
-  const ADMIN_KEY_STORAGE = "FASHION_ADMIN_KEY";
-  const getAdminKey = () => localStorage.getItem(ADMIN_KEY_STORAGE) || "";
-
-  // =======================
-  // HELPERS
-  // =======================
-  function saveCart(){ localStorage.setItem("FASHION_CART", JSON.stringify(cart)); updateCartBadge(); }
-  function updateCartBadge(){
-    const count = cart.reduce((a,i)=>a+(i.qty||0),0);
-    document.getElementById("cartCount").textContent = String(count);
-  }
-
-  function escapeHtml(str){
-    return String(str ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-  function formatMoney(n){ return (Number(n)||0).toFixed(0); }
-
-  function setStatus(msg, isError=false){
-    const el = document.getElementById("adminStatus");
-    el.textContent = msg || "";
-    el.style.color = isError ? "#e74c3c" : "#636e72";
-  }
-  async function readJsonSafe(res){
-    const text = await res.text();
-    try { return { text, json: JSON.parse(text) }; }
-    catch { return { text, json: null }; }
-  }
-
-  function showShop(){
-    document.getElementById("adminSection").classList.add("hidden");
-    document.getElementById("shopSection").scrollIntoView({ behavior: "smooth" });
-  }
-  function openAdmin(){
-    document.getElementById("adminSection").classList.remove("hidden");
-    renderProductList();
-    window.scrollTo({ top: document.getElementById("adminSection").offsetTop, behavior: "smooth" });
-  }
-
-  // =======================
-  // CART
-  // =======================
-  function addToCart(productId){
-    const p = products.find(x => String(x.id) === String(productId));
-    if (!p) return alert("Product not found");
-
-    const existing = cart.find(x => String(x.id) === String(productId));
-    if (existing) existing.qty += 1;
-    else cart.push({ id: p.id, name: p.name, price: Number(p.price)||0, image: p.image, qty: 1 });
-
-    saveCart();
-    alert("Added to cart ✅");
-  }
-
-  function removeFromCart(productId){
-    cart = cart.filter(x => String(x.id) !== String(productId));
-    saveCart();
-    renderCart();
-  }
-
-  function changeQty(productId, delta){
-    const item = cart.find(x => String(x.id) === String(productId));
-    if (!item) return;
-    item.qty += delta;
-    if (item.qty <= 0) removeFromCart(productId);
-    else { saveCart(); renderCart(); }
-  }
-
-  function cartTotal(){
-    return cart.reduce((sum,i)=> sum + (Number(i.price)||0) * (Number(i.qty)||0), 0);
-  }
-
-  function openCart(){
-    renderCart();
-    document.getElementById("cartModal").classList.remove("hidden");
-  }
-  function closeCart(){
-    document.getElementById("cartModal").classList.add("hidden");
-  }
-
-  function renderCart(){
-    const body = document.getElementById("cartBody");
-    if (!cart.length){
-      body.innerHTML = `<p style="color:#636e72;">Your cart is empty.</p>`;
-      return;
-    }
-
-    body.innerHTML = `
-      ${cart.map(i => `
-        <div class="cart-row">
-          <img src="${i.image || ''}" onerror="this.style.display='none'">
-          <div>
-            <b>${escapeHtml(i.name)}</b><br>
-            <span style="color:#636e72">${formatMoney(i.price)} ETB</span>
-          </div>
-          <div class="qty">
-            <button onclick="changeQty('${String(i.id)}', -1)">−</button>
-            <b>${i.qty}</b>
-            <button onclick="changeQty('${String(i.id)}', 1)">+</button>
-          </div>
-          <div class="hide-sm" style="text-align:right;">
-            <b>${formatMoney((i.price||0)*(i.qty||0))} ETB</b>
-          </div>
-          <div style="text-align:right;">
-            <button class="btn-danger" style="padding:0.4rem 0.6rem;" onclick="removeFromCart('${String(i.id)}')">X</button>
-          </div>
-        </div>
-      `).join("")}
-
-      <div style="display:flex;justify-content:flex-end;margin-top:1rem;font-size:1.1rem;">
-        <b>Total: ${formatMoney(cartTotal())} ETB</b>
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 id="authTitle">Login</h2>
+        <button class="btn btn-dark" style="width:auto;padding:0.5rem 0.75rem;border-radius:10px;" onclick="closeAuth()">✕</button>
       </div>
-    `;
-  }
+      <p class="muted" id="authSubtitle">Login to see your orders and checkout faster.</p>
 
-  // =======================
-  // CHECKOUT
-  // =======================
-  function openCheckout(){
-    if (!cart.length) return alert("Cart is empty");
-    closeCart();
-    document.getElementById("checkoutTotal").textContent = formatMoney(cartTotal());
-    document.getElementById("checkoutStatus").textContent = "";
-    document.getElementById("checkoutModal").classList.remove("hidden");
-    togglePaymentFields();
-  }
-  function closeCheckout(){
-    document.getElementById("checkoutModal").classList.add("hidden");
-  }
-
-  function togglePaymentFields(){
-    const method = document.getElementById("payMethod").value;
-    document.getElementById("cardInfo").classList.toggle("hidden", method !== "card");
-    document.getElementById("telebirrInfo").classList.toggle("hidden", method !== "telebirr");
-  }
-
-  async function fileToDataUrl(file){
-    return new Promise((resolve, reject)=>{
-      const r = new FileReader();
-      r.onload = () => resolve(String(r.result || ""));
-      r.onerror = () => reject(new Error("File read failed"));
-      r.readAsDataURL(file);
-    });
-  }
-
-  async function placeOrder(){
-    const fullName = document.getElementById("cFullName").value.trim();
-    const phone = document.getElementById("cPhone").value.trim();
-    const email = document.getElementById("cEmail").value.trim();
-    const address = document.getElementById("cAddress").value.trim();
-    const note = document.getElementById("cNote").value.trim();
-
-    if (!fullName || !phone || !address) return alert("Name, phone, and address are required.");
-
-    const method = document.getElementById("payMethod").value;
-
-    const payload = {
-      items: cart.map(i => ({
-        id: i.id,
-        name: i.name,
-        price: Number(i.price)||0,
-        qty: Number(i.qty)||0,
-        subtotal: (Number(i.price)||0) * (Number(i.qty)||0)
-      })),
-      total: cartTotal(),
-      customer: { fullName, phone, email, address, note },
-      payment: { method }
-    };
-
-    if (method === "telebirr"){
-      const txnId = document.getElementById("teleTxnId").value.trim();
-      const proofFile = document.getElementById("teleProof").files[0];
-      if (!txnId) return alert("Telebirr Transaction ID is required.");
-      if (!proofFile) return alert("Telebirr proof image is required.");
-      if (proofFile.size > 2 * 1024 * 1024) return alert("Proof image too large (max 2MB).");
-
-      payload.payment.telebirrTxnId = txnId;
-      payload.payment.proofImage = await fileToDataUrl(proofFile);
-    }
-
-    const btn = document.getElementById("placeOrderBtn");
-    btn.disabled = true;
-    btn.textContent = "Placing...";
-    document.getElementById("checkoutStatus").textContent = "Submitting order...";
-
-    try{
-      const res = await fetch(API_BASE + "/api/orders/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const { text, json } = await readJsonSafe(res);
-
-      if (!res.ok){
-        alert(`ORDER FAILED\nStatus: ${res.status}\n${text}`);
-        throw new Error(json?.error || json?.details || text || "Checkout failed");
-      }
-
-      alert("✅ Order placed successfully!\nOrder ID: " + (json?.order?.orderId || ""));
-      cart = [];
-      saveCart();
-      closeCheckout();
-      await loadProducts();
-    }catch(e){
-      alert("Checkout error: " + e.message);
-      document.getElementById("checkoutStatus").textContent = "Error: " + e.message;
-    }finally{
-      btn.disabled = false;
-      btn.textContent = "Place Order";
-    }
-  }
-
-  // =======================
-  // ADMIN
-  // =======================
-  function setAdminKey() {
-    const k = prompt("Enter ADMIN_API_KEY:");
-    if (!k) return;
-    localStorage.setItem(ADMIN_KEY_STORAGE, k.trim());
-    alert("Admin key saved on this browser.");
-  }
-  function logoutAdmin() {
-    localStorage.removeItem(ADMIN_KEY_STORAGE);
-    alert("Admin key removed.");
-  }
-
-  async function testAdminKey(){
-    const k = getAdminKey();
-    if (!k) return alert("Admin key not set. Click 'Set Admin Key' first.");
-
-    try{
-      const fd = new FormData();
-      fd.append("name", "TEST");
-      fd.append("category", "cultural");
-      fd.append("gender", "men");
-      fd.append("price", "1");
-
-      const res = await fetch(API_BASE + "/api/products", {
-        method: "POST",
-        headers: { "x-admin-key": k },
-        body: fd
-      });
-
-      const { text, json } = await readJsonSafe(res);
-
-      if (res.status === 401) return alert("❌ Unauthorized. Admin key is wrong.");
-      if (res.status === 400 && (json?.error || "").toLowerCase().includes("image")) {
-        return alert("✅ Admin key is correct (auth passed).");
-      }
-      alert("Response: " + res.status + "\n" + text);
-    }catch(e){
-      alert("Test error: " + e.message);
-    }
-  }
-
-  function renderProductList(){
-    const list = document.getElementById("productList");
-    if (!products.length) {
-      list.innerHTML = '<p style="color:#636e72;padding:1rem;">No products yet.</p>';
-      return;
-    }
-
-    list.innerHTML = products.map(p => `
-      <div class="product-item">
-        <div class="product-item-image">
-          <img src="${p.image || ''}" alt="${escapeHtml(p.name || '')}" onerror="this.style.display='none'">
+      <div id="authFormLogin">
+        <div style="margin-top:0.75rem;">
+          <label>Email</label>
+          <input id="loginEmail" type="email" placeholder="you@example.com">
         </div>
-        <div class="product-item-details">
-          <h3>${escapeHtml(p.name || '')}</h3>
-          <p><b>Category:</b> ${escapeHtml(p.category || '')} | <b>Gender:</b> ${escapeHtml(p.gender || '')}</p>
-          <p><b>Price:</b> ${formatMoney(p.price)} ETB</p>
+        <div style="margin-top:0.75rem;">
+          <label>Password</label>
+          <input id="loginPassword" type="password" placeholder="••••••••">
+        </div>
+        <div class="actions">
+          <button class="btn-primary" onclick="doLogin()">Login</button>
+          <button class="btn btn-dark" style="width:auto;padding:0.85rem 1rem;" onclick="switchToRegister()">Create account</button>
+        </div>
+        <p id="authMsg" style="margin-top:0.75rem;color:#e74c3c;font-weight:800;"></p>
+      </div>
+
+      <div id="authFormRegister" class="hidden">
+        <div style="margin-top:0.75rem;">
+          <label>Full Name</label>
+          <input id="regFullName" placeholder="Your name">
+        </div>
+        <div style="margin-top:0.75rem;">
+          <label>Email</label>
+          <input id="regEmail" type="email" placeholder="you@example.com">
+        </div>
+        <div style="margin-top:0.75rem;">
+          <label>Password (min 6)</label>
+          <input id="regPassword" type="password" placeholder="••••••••">
+        </div>
+        <div class="actions">
+          <button class="btn-primary" onclick="doRegister()">Register</button>
+          <button class="btn btn-dark" style="width:auto;padding:0.85rem 1rem;" onclick="switchToLogin()">I already have account</button>
+        </div>
+        <p id="authMsg2" style="margin-top:0.75rem;color:#e74c3c;font-weight:800;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CART DRAWER -->
+  <div id="cartDrawer" class="drawer-backdrop hidden" onclick="if(event.target.id==='cartDrawer'){closeCart()}">
+    <div class="drawer">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2>🛒 Cart</h2>
+        <button class="btn btn-dark" style="width:auto;padding:0.5rem 0.75rem;" onclick="closeCart()">✕</button>
+      </div>
+
+      <div id="cartItems"></div>
+
+      <div class="hr"></div>
+      <div style="display:flex;justify-content:space-between;font-weight:900;">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">0 ETB</span>
+      </div>
+
+      <button class="btn-primary" style="width:100%;margin-top:1rem;" onclick="openCheckout()">Checkout</button>
+      <button class="btn btn-dark" style="width:100%;margin-top:0.6rem;" onclick="clearCart()">Clear Cart</button>
+    </div>
+  </div>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="checkoutModal" class="modal-backdrop hidden">
+    <div class="modal" style="width:min(720px,100%);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2>✅ Checkout</h2>
+        <button class="btn btn-dark" style="width:auto;padding:0.5rem 0.75rem;border-radius:10px;" onclick="closeCheckout()">✕</button>
+      </div>
+      <p class="muted">Fill your details, choose payment, and place your order.</p>
+
+      <div class="row">
+        <div>
+          <label>Full Name</label>
+          <input id="ckFullName" placeholder="Full name">
         </div>
         <div>
-          <button class="btn-danger" onclick="deleteProduct('${String(p.id).replaceAll("'","")}')">Delete</button>
+          <label>Phone</label>
+          <input id="ckPhone" placeholder="+251...">
         </div>
       </div>
-    `).join("");
-  }
 
-  async function deleteProduct(id){
-    if (!confirm("Delete this product?")) return;
+      <div class="row" style="margin-top:0.75rem;">
+        <div>
+          <label>Email (optional)</label>
+          <input id="ckEmail" placeholder="you@example.com">
+        </div>
+        <div>
+          <label>City</label>
+          <input id="ckCity" placeholder="Addis Ababa">
+        </div>
+      </div>
 
-    const adminKey = getAdminKey();
-    if (!adminKey) return alert("Admin key not set. Click 'Set Admin Key' first.");
+      <div style="margin-top:0.75rem;">
+        <label>Address</label>
+        <input id="ckAddress" placeholder="Street, building, etc...">
+      </div>
 
-    try{
-      const res = await fetch(API_BASE + "/api/products/" + encodeURIComponent(id), {
-        method: "DELETE",
-        headers: { "x-admin-key": adminKey }
-      });
+      <div style="margin-top:0.75rem;">
+        <label>Country</label>
+        <input id="ckCountry" value="Ethiopia">
+      </div>
 
-      const { text, json } = await readJsonSafe(res);
-      if (!res.ok) throw new Error(json?.error || json?.details || text || "Delete failed");
+      <div style="margin-top:0.75rem;">
+        <label>Order Notes (optional)</label>
+        <textarea id="ckNotes" rows="3" placeholder="Any special request..."></textarea>
+      </div>
 
-      alert("Deleted!");
-      await loadProducts();
-    }catch(e){
-      alert("Delete error: " + e.message);
+      <div class="hr"></div>
+
+      <div class="row">
+        <div>
+          <label>Payment Method</label>
+          <select id="ckPaymentMethod" onchange="renderPaymentFields()">
+            <option value="cash">Cash on Delivery</option>
+            <option value="card">Card</option>
+            <option value="telebirr">Telebirr</option>
+          </select>
+        </div>
+        <div>
+          <label>Total</label>
+          <input id="ckTotal" disabled>
+        </div>
+      </div>
+
+      <div id="telebirrFields" class="hidden" style="margin-top:0.75rem;">
+        <div class="row">
+          <div>
+            <label>Telebirr Reference / Transaction ID</label>
+            <input id="ckTelebirrRef" placeholder="e.g., TB123456789">
+          </div>
+          <div>
+            <label>Upload Payment Proof (optional)</label>
+            <input id="ckProof" type="file" accept="image/*">
+          </div>
+        </div>
+        <p style="color:#636e72;margin-top:0.5rem;font-size:0.95rem;">
+          If you pay via Telebirr, upload a screenshot as proof (optional) and add the transaction ID.
+        </p>
+      </div>
+
+      <div id="cardFields" class="hidden" style="margin-top:0.75rem;">
+        <p style="color:#636e72;font-size:0.95rem;">
+          Card processing is a demo placeholder. You can integrate Stripe/PayPal later.
+        </p>
+      </div>
+
+      <div class="actions" style="margin-top:1rem;">
+        <button class="btn-primary" onclick="placeOrder()">Place Order</button>
+        <button class="btn btn-dark" style="width:auto;padding:0.85rem 1rem;" onclick="closeCheckout()">Cancel</button>
+      </div>
+
+      <p id="checkoutMsg" style="margin-top:0.75rem;color:#e74c3c;font-weight:900;"></p>
+    </div>
+  </div>
+
+  <script>
+    // =======================
+    // CONFIG
+    // =======================
+    const API_BASE =
+      (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+        ? "http://localhost:3000"
+        : "https://fashion-2tif.onrender.com";
+
+    // =======================
+    // STATE
+    // =======================
+    let products = [];
+    let currentFilter = "all";
+    let cart = JSON.parse(localStorage.getItem("FASHION_CART") || "[]");
+
+    const ADMIN_KEY_STORAGE = "FASHION_ADMIN_KEY";
+    const getAdminKey = () => localStorage.getItem(ADMIN_KEY_STORAGE) || "";
+
+    const AUTH_TOKEN_KEY = "FASHION_AUTH_TOKEN";
+    const getToken = () => localStorage.getItem(AUTH_TOKEN_KEY) || "";
+    const setToken = (t) => localStorage.setItem(AUTH_TOKEN_KEY, t);
+    const clearToken = () => localStorage.removeItem(AUTH_TOKEN_KEY);
+
+    // =======================
+    // HELPERS
+    // =======================
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
-  }
 
-  async function addProduct(formEl){
-    const adminKey = getAdminKey();
-    if (!adminKey) return alert("Admin key not set. Click 'Set Admin Key' first.");
+    function formatMoney(n){ return (Number(n)||0).toFixed(0); }
 
-    const file = document.getElementById("imageInput").files[0];
-    if (!file) return alert("Please select an image file.");
-    if (file.size > 2 * 1024 * 1024) return alert("Image too large. Please use an image under 2MB.");
-
-    const fd = new FormData();
-    fd.append("image", file);
-    fd.append("name", document.getElementById("productName").value.trim());
-    fd.append("description", document.getElementById("productDescription").value.trim());
-    fd.append("category", document.getElementById("productCategory").value);
-    fd.append("gender", document.getElementById("productGender").value);
-    fd.append("price", document.getElementById("productPrice").value);
-
-    const btn = document.getElementById("addBtn");
-    btn.disabled = true;
-    btn.textContent = "Uploading...";
-    setStatus("Uploading image + saving product...");
-
-    try{
-      const res = await fetch(API_BASE + "/api/products", {
-        method: "POST",
-        headers: { "x-admin-key": adminKey },
-        body: fd
-      });
-
-      const { text, json } = await readJsonSafe(res);
-      if (!res.ok) throw new Error(json?.error || json?.details || text || "Failed to add product");
-
-      alert("Product added!");
-      setStatus("Saved ✅");
-      formEl.reset();
-      document.getElementById("imagePreview").classList.add("hidden");
-      await loadProducts();
-    }catch(e){
-      setStatus("Error: " + e.message, true);
-      alert("Add error: " + e.message);
-    }finally{
-      btn.disabled = false;
-      btn.textContent = "Add Product";
+    async function readJsonSafe(res){
+      const text = await res.text();
+      try { return { text, json: JSON.parse(text) }; }
+      catch { return { text, json: null }; }
     }
-  }
 
-  // =======================
-  // PRODUCTS
-  // =======================
-  async function loadProducts(){
-    const loading = document.getElementById("loadingProducts");
-    try {
-      const res = await fetch(API_BASE + "/api/products", { cache: "no-store" });
-      const data = await res.json();
-      products = Array.isArray(data) ? data : [];
-      loading.classList.add("hidden");
-      renderProducts();
+    function setStatus(msg, isError=false){
+      const el = document.getElementById("adminStatus");
+      if(!el) return;
+      el.textContent = msg || "";
+      el.style.color = isError ? "#e74c3c" : "#636e72";
+    }
+
+    function saveCart(){
+      localStorage.setItem("FASHION_CART", JSON.stringify(cart));
+      updateCartCount();
+    }
+
+    function updateCartCount(){
+      const count = cart.reduce((s, it) => s + (Number(it.qty)||1), 0);
+      document.getElementById("cartCount").textContent = count;
+    }
+
+    function cartSubtotal(){
+      return cart.reduce((s, it) => s + (Number(it.price)||0) * (Number(it.qty)||1), 0);
+    }
+
+    // =======================
+    // NAV
+    // =======================
+    function showShop(){
+      document.getElementById("ordersSection").classList.add("hidden");
+      document.getElementById("adminSection").classList.add("hidden");
+      document.getElementById("shopSection").scrollIntoView({ behavior:"smooth" });
+    }
+
+    function openAdmin(){
+      document.getElementById("ordersSection").classList.add("hidden");
+      document.getElementById("adminSection").classList.remove("hidden");
       renderProductList();
-    } catch (err) {
-      console.error(err);
-      loading.innerHTML = '<p style="color:#e74c3c;">Failed to load products from backend.</p>';
-    }
-  }
-
-  function filterProducts(category, btnEl){
-    currentFilter = category;
-    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
-    if (btnEl) btnEl.classList.add("active");
-    renderProducts();
-  }
-
-  function renderProducts(){
-    const grid = document.getElementById("productsGrid");
-    const filtered = (currentFilter === "all")
-      ? products
-      : products.filter(p => p.category === currentFilter || p.gender === currentFilter);
-
-    if (!filtered.length) {
-      grid.innerHTML = `<div style="padding:1rem;color:#636e72;">No products found.</div>`;
-      return;
+      window.scrollTo({ top: document.getElementById("adminSection").offsetTop, behavior: "smooth" });
     }
 
-    grid.innerHTML = filtered.map(p => `
-      <div class="product-card">
-        <div class="product-image">
-          <img src="${p.image || ''}" alt="${escapeHtml(p.name || 'Product')}" onerror="this.style.display='none'">
+    async function openOrders(){
+      document.getElementById("adminSection").classList.add("hidden");
+      document.getElementById("ordersSection").classList.remove("hidden");
+      window.scrollTo({ top: document.getElementById("ordersSection").offsetTop, behavior:"smooth" });
+
+      if(!getToken()){
+        document.getElementById("ordersList").innerHTML =
+          '<div style="padding:1rem;border:1px solid #eee;border-radius:14px;color:#636e72;">Please login to view orders. <span class="link" onclick="openAuth()">Login</span></div>';
+        return;
+      }
+      await loadMyOrders();
+    }
+
+    // =======================
+    // PRODUCTS
+    // =======================
+    async function loadProducts(){
+      const loading = document.getElementById("loadingProducts");
+      try {
+        const res = await fetch(API_BASE + "/api/products", { cache: "no-store" });
+        const data = await res.json();
+        products = Array.isArray(data) ? data : [];
+        loading.classList.add("hidden");
+        renderProducts();
+        renderProductList();
+      } catch (err) {
+        console.error(err);
+        loading.innerHTML = '<p style="color:#e74c3c;">Failed to load products from backend.</p>';
+      }
+    }
+
+    function filterProducts(category, btnEl){
+      currentFilter = category;
+      document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+      if (btnEl) btnEl.classList.add("active");
+      renderProducts();
+    }
+
+    function renderProducts(){
+      const grid = document.getElementById("productsGrid");
+      const filtered = (currentFilter === "all")
+        ? products
+        : products.filter(p => p.category === currentFilter || p.gender === currentFilter);
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div style="padding:1rem;color:#636e72;">No products found.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => `
+        <div class="product-card">
+          <div class="product-image">
+            <img src="${p.image || ''}" alt="${escapeHtml(p.name || 'Product')}" onerror="this.style.display='none'">
+          </div>
+          <div class="product-details">
+            <div class="product-category">${escapeHtml(p.category || '')} • ${escapeHtml(p.gender || '')}</div>
+            <div class="product-name">${escapeHtml(p.name || '')}</div>
+            ${p.description ? `<p style="font-size:0.95rem;color:#636e72;margin:0.4rem 0;">${escapeHtml(p.description)}</p>` : ""}
+            <div class="product-price">${formatMoney(p.price)} ETB</div>
+            <button class="btn btn-dark" onclick="addToCart('${String(p.id).replaceAll("'","")}')">Add to Cart</button>
+          </div>
         </div>
-        <div class="product-details">
-          <div class="product-category">${escapeHtml(p.category || '')} • ${escapeHtml(p.gender || '')}</div>
-          <div class="product-name">${escapeHtml(p.name || '')}</div>
-          ${p.description ? `<p style="font-size:0.9rem;color:#636e72;margin:0.5rem 0;">${escapeHtml(p.description)}</p>` : ""}
-          <div class="product-price">${formatMoney(p.price)} ETB</div>
-          <button class="add-to-cart-btn" onclick="addToCart('${String(p.id)}')">Add to Cart</button>
+      `).join("");
+    }
+
+    // =======================
+    // CART
+    // =======================
+    function addToCart(productId){
+      const p = products.find(x => String(x.id) === String(productId));
+      if(!p) return alert("Product not found");
+
+      const existing = cart.find(x => String(x.productId) === String(productId));
+      if(existing){
+        existing.qty = (Number(existing.qty)||1) + 1;
+      }else{
+        cart.push({
+          productId: p.id,
+          name: p.name,
+          price: Number(p.price)||0,
+          qty: 1,
+          image: p.image || ""
+        });
+      }
+      saveCart();
+      openCart();
+    }
+
+    function removeFromCart(productId){
+      cart = cart.filter(x => String(x.productId) !== String(productId));
+      saveCart();
+      renderCart();
+    }
+
+    function changeQty(productId, delta){
+      const it = cart.find(x => String(x.productId) === String(productId));
+      if(!it) return;
+      it.qty = Math.max(1, (Number(it.qty)||1) + delta);
+      saveCart();
+      renderCart();
+    }
+
+    function clearCart(){
+      if(!confirm("Clear cart?")) return;
+      cart = [];
+      saveCart();
+      renderCart();
+    }
+
+    function openCart(){
+      document.getElementById("cartDrawer").classList.remove("hidden");
+      renderCart();
+    }
+
+    function closeCart(){
+      document.getElementById("cartDrawer").classList.add("hidden");
+    }
+
+    function renderCart(){
+      const box = document.getElementById("cartItems");
+      if(cart.length === 0){
+        box.innerHTML = `<div style="padding:1rem;color:#636e72;border:1px solid #eee;border-radius:14px;margin-top:1rem;">Your cart is empty.</div>`;
+        document.getElementById("cartSubtotal").textContent = "0 ETB";
+        return;
+      }
+
+      box.innerHTML = cart.map(it => `
+        <div class="cart-item">
+          <div class="cart-thumb"><img src="${it.image || ''}" onerror="this.style.display='none'"></div>
+          <div style="flex:1;">
+            <div style="font-weight:900;">${escapeHtml(it.name || "")}</div>
+            <div style="color:#e74c3c;font-weight:900;margin-top:0.2rem;">${formatMoney(it.price)} ETB</div>
+            <div class="qty">
+              <button onclick="changeQty('${String(it.productId).replaceAll("'","")}', -1)">-</button>
+              <span>${Number(it.qty)||1}</span>
+              <button onclick="changeQty('${String(it.productId).replaceAll("'","")}', 1)">+</button>
+              <button class="btn-danger" style="margin-left:auto;" onclick="removeFromCart('${String(it.productId).replaceAll("'","")}')">Remove</button>
+            </div>
+          </div>
         </div>
-      </div>
-    `).join("");
-  }
+      `).join("");
 
-  // =======================
-  // DOM READY
-  // =======================
-  document.addEventListener("DOMContentLoaded", () => {
-    updateCartBadge();
+      document.getElementById("cartSubtotal").textContent = `${formatMoney(cartSubtotal())} ETB`;
+    }
 
-    document.getElementById("imageInput").addEventListener("change", (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
+    // =======================
+    // CHECKOUT
+    // =======================
+    function openCheckout(){
+      if(cart.length === 0) return alert("Cart is empty");
+      if(!getToken()){
+        alert("Please login first to checkout.");
+        openAuth();
+        return;
+      }
 
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const img = document.getElementById("imagePreview");
-        img.src = ev.target.result;
-        img.classList.remove("hidden");
-      };
-      reader.readAsDataURL(file);
+      document.getElementById("checkoutMsg").textContent = "";
+      document.getElementById("ckTotal").value = formatMoney(cartSubtotal()) + " ETB";
+      renderPaymentFields();
+      document.getElementById("checkoutModal").classList.remove("hidden");
+    }
+
+    function closeCheckout(){
+      document.getElementById("checkoutModal").classList.add("hidden");
+    }
+
+    function renderPaymentFields(){
+      const method = document.getElementById("ckPaymentMethod").value;
+      document.getElementById("telebirrFields").classList.toggle("hidden", method !== "telebirr");
+      document.getElementById("cardFields").classList.toggle("hidden", method !== "card");
+    }
+
+    async function placeOrder(){
+      const msgEl = document.getElementById("checkoutMsg");
+      msgEl.textContent = "";
+
+      const fullName = document.getElementById("ckFullName").value.trim();
+      const phone = document.getElementById("ckPhone").value.trim();
+      const email = document.getElementById("ckEmail").value.trim();
+      const address = document.getElementById("ckAddress").value.trim();
+      const city = document.getElementById("ckCity").value.trim();
+      const country = document.getElementById("ckCountry").value.trim();
+      const notes = document.getElementById("ckNotes").value.trim();
+      const paymentMethod = document.getElementById("ckPaymentMethod").value;
+      const telebirrRef = document.getElementById("ckTelebirrRef").value.trim();
+      const proofFile = document.getElementById("ckProof").files[0];
+
+      if(!fullName) return msgEl.textContent = "Full name is required";
+      if(!phone) return msgEl.textContent = "Phone is required";
+      if(!address) return msgEl.textContent = "Address is required";
+
+      if(paymentMethod === "telebirr" && !telebirrRef && !proofFile){
+        // allow, but encourage
+        // msgEl.textContent = "Please provide Telebirr reference or upload proof (recommended).";
+        // return;
+      }
+
+      const fd = new FormData();
+      fd.append("items", JSON.stringify(cart.map(it => ({
+        productId: it.productId,
+        name: it.name,
+        price: it.price,
+        qty: it.qty,
+        image: it.image
+      }))));
+      fd.append("fullName", fullName);
+      fd.append("phone", phone);
+      fd.append("email", email);
+      fd.append("address", address);
+      fd.append("city", city);
+      fd.append("country", country);
+      fd.append("notes", notes);
+      fd.append("paymentMethod", paymentMethod);
+      fd.append("telebirrRef", telebirrRef);
+      if(proofFile) fd.append("paymentProof", proofFile);
+
+      try{
+        const res = await fetch(API_BASE + "/api/orders", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + getToken() },
+          body: fd
+        });
+
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok){
+          alert(`ORDER FAILED\nStatus: ${res.status}\n${text}`);
+          throw new Error(json?.error || json?.details || text || "Order failed");
+        }
+
+        alert("✅ Order placed! Order ID: " + (json?.order?.orderId || ""));
+        closeCheckout();
+        closeCart();
+
+        cart = [];
+        saveCart();
+
+        // show orders
+        await openOrders();
+      }catch(e){
+        msgEl.textContent = e.message;
+      }
+    }
+
+    // =======================
+    // AUTH
+    // =======================
+    function openAuth(){
+      document.getElementById("authModal").classList.remove("hidden");
+      switchToLogin();
+    }
+    function closeAuth(){
+      document.getElementById("authModal").classList.add("hidden");
+    }
+
+    function switchToRegister(){
+      document.getElementById("authTitle").textContent = "Create Account";
+      document.getElementById("authSubtitle").textContent = "Register to track your orders anytime.";
+      document.getElementById("authFormLogin").classList.add("hidden");
+      document.getElementById("authFormRegister").classList.remove("hidden");
+      document.getElementById("authMsg").textContent = "";
+      document.getElementById("authMsg2").textContent = "";
+    }
+
+    function switchToLogin(){
+      document.getElementById("authTitle").textContent = "Login";
+      document.getElementById("authSubtitle").textContent = "Login to see your orders and checkout faster.";
+      document.getElementById("authFormRegister").classList.add("hidden");
+      document.getElementById("authFormLogin").classList.remove("hidden");
+      document.getElementById("authMsg").textContent = "";
+      document.getElementById("authMsg2").textContent = "";
+    }
+
+    function setAuthLabel(){
+      const lbl = document.getElementById("authLabel");
+      if(getToken()) lbl.textContent = "Account";
+      else lbl.textContent = "Login";
+    }
+
+    async function doRegister(){
+      const msg = document.getElementById("authMsg2");
+      msg.textContent = "";
+      const fullName = document.getElementById("regFullName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const password = document.getElementById("regPassword").value;
+
+      try{
+        const res = await fetch(API_BASE + "/api/auth/register", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ fullName, email, password })
+        });
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Register failed");
+
+        setToken(json.token);
+        setAuthLabel();
+        closeAuth();
+        alert("✅ Account created! You are logged in.");
+      }catch(e){
+        msg.textContent = e.message;
+      }
+    }
+
+    async function doLogin(){
+      const msg = document.getElementById("authMsg");
+      msg.textContent = "";
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      try{
+        const res = await fetch(API_BASE + "/api/auth/login", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Login failed");
+
+        setToken(json.token);
+        setAuthLabel();
+        closeAuth();
+        alert("✅ Logged in!");
+      }catch(e){
+        msg.textContent = e.message;
+      }
+    }
+
+    function logoutCustomer(){
+      clearToken();
+      setAuthLabel();
+      alert("Logged out.");
+    }
+
+    // If user clicks Account when logged in => ask logout or orders
+    document.addEventListener("click", (e) => {
+      if(e.target && e.target.id === "authLabel" && getToken()){
+        // nothing
+      }
     });
 
-    document.getElementById("productForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await addProduct(e.target);
+    // =======================
+    // MY ORDERS
+    // =======================
+    async function loadMyOrders(){
+      const box = document.getElementById("ordersList");
+      box.innerHTML = `<div style="padding:1rem;color:#636e72;border:1px solid #eee;border-radius:14px;">Loading...</div>`;
+
+      try{
+        const res = await fetch(API_BASE + "/api/orders/my", {
+          headers: { "Authorization": "Bearer " + getToken() }
+        });
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to load orders");
+
+        const orders = Array.isArray(json) ? json : [];
+        if(orders.length === 0){
+          box.innerHTML = `<div style="padding:1rem;color:#636e72;border:1px solid #eee;border-radius:14px;">No orders yet.</div>`;
+          return;
+        }
+
+        box.innerHTML = orders.map(o => {
+          const itemsHtml = (o.items || []).map(it => `
+            <div style="display:flex;gap:0.75rem;align-items:center;padding:0.5rem 0;border-bottom:1px solid #f3f3f3;">
+              <div style="width:56px;height:56px;border-radius:12px;overflow:hidden;background:#f1f1f1;">
+                <img src="${it.image || ''}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+              </div>
+              <div style="flex:1;">
+                <div style="font-weight:900;">${escapeHtml(it.name || "")}</div>
+                <div style="color:#636e72;font-weight:800;font-size:0.95rem;">Qty: ${Number(it.qty)||1} • ${formatMoney(it.price)} ETB</div>
+              </div>
+            </div>
+          `).join("");
+
+          return `
+            <div style="border:1px solid #eee;border-radius:16px;padding:1rem;margin-bottom:1rem;">
+              <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+                <div>
+                  <div style="font-weight:1000;font-size:1.05rem;">Order: ${escapeHtml(o.orderId || "")}</div>
+                  <div style="color:#636e72;font-weight:800;font-size:0.95rem;">
+                    Status: ${escapeHtml(o.status || "placed")} • Payment: ${escapeHtml(o.payment?.method || "")} (${escapeHtml(o.payment?.status || "pending")})
+                  </div>
+                </div>
+                <div style="font-weight:1000;color:#e74c3c;font-size:1.05rem;">${formatMoney(o.total)} ETB</div>
+              </div>
+
+              <div style="margin-top:0.75rem;">
+                ${itemsHtml}
+              </div>
+
+              <div style="margin-top:0.75rem;color:#636e72;font-weight:800;font-size:0.95rem;">
+                Placed: ${new Date(o.createdAt).toLocaleString()}
+              </div>
+            </div>
+          `;
+        }).join("");
+      }catch(e){
+        box.innerHTML = `<div style="padding:1rem;color:#e74c3c;border:1px solid #eee;border-radius:14px;">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    // =======================
+    // ADMIN (existing)
+    // =======================
+    function setAdminKey() {
+      const k = prompt("Enter ADMIN_API_KEY:");
+      if (!k) return;
+      localStorage.setItem(ADMIN_KEY_STORAGE, k.trim());
+      alert("Admin key saved on this browser.");
+    }
+    function logoutAdmin() {
+      localStorage.removeItem(ADMIN_KEY_STORAGE);
+      alert("Admin key removed.");
+    }
+
+    async function testAdminKey(){
+      const k = getAdminKey();
+      if (!k) return alert("Admin key not set. Click 'Set Admin Key' first.");
+      try{
+        const fd = new FormData();
+        fd.append("name", "TEST");
+        fd.append("category", "cultural");
+        fd.append("gender", "men");
+        fd.append("price", "1");
+
+        const res = await fetch(API_BASE + "/api/products", {
+          method: "POST",
+          headers: { "x-admin-key": k },
+          body: fd
+        });
+
+        const { text, json } = await readJsonSafe(res);
+
+        if (res.status === 401) return alert("❌ Unauthorized. Admin key is wrong.");
+        if (res.status === 500 && (json?.error || "").includes("Server missing ADMIN")) {
+          return alert("❌ Server missing ADMIN_API_KEY on backend.");
+        }
+        if (res.status === 400 && (json?.error || "").toLowerCase().includes("image")) {
+          return alert("✅ Admin key is correct (auth passed).");
+        }
+        alert("Response: " + res.status + "\n" + text);
+      }catch(e){
+        alert("Test error: " + e.message);
+      }
+    }
+
+    function renderProductList(){
+      const list = document.getElementById("productList");
+      if (!products.length) {
+        list.innerHTML = '<p style="color:#636e72;padding:1rem;">No products yet.</p>';
+        return;
+      }
+
+      list.innerHTML = products.map(p => `
+        <div class="product-item">
+          <div class="product-item-image">
+            <img src="${p.image || ''}" alt="${escapeHtml(p.name || '')}" onerror="this.style.display='none'">
+          </div>
+          <div class="product-item-details">
+            <h3>${escapeHtml(p.name || '')}</h3>
+            <p><b>Category:</b> ${escapeHtml(p.category || '')} | <b>Gender:</b> ${escapeHtml(p.gender || '')}</p>
+            <p><b>Price:</b> ${formatMoney(p.price)} ETB</p>
+          </div>
+          <div>
+            <button class="btn-danger" onclick="deleteProduct('${String(p.id).replaceAll("'","")}')">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function deleteProduct(id){
+      if (!confirm("Delete this product?")) return;
+
+      const adminKey = getAdminKey();
+      if (!adminKey) return alert("Admin key not set. Click 'Set Admin Key' first.");
+
+      try{
+        const res = await fetch(API_BASE + "/api/products/" + encodeURIComponent(id), {
+          method: "DELETE",
+          headers: { "x-admin-key": adminKey }
+        });
+
+        const { text, json } = await readJsonSafe(res);
+        if (!res.ok) throw new Error(json?.error || json?.details || text || "Delete failed");
+
+        alert("Deleted!");
+        await loadProducts();
+      }catch(e){
+        alert("Delete error: " + e.message);
+      }
+    }
+
+    async function addProduct(formEl){
+      const adminKey = getAdminKey();
+      if (!adminKey) return alert("Admin key not set. Click 'Set Admin Key' first.");
+
+      const file = document.getElementById("imageInput").files[0];
+      if (!file) return alert("Please select an image file.");
+      if (file.size > 2 * 1024 * 1024) return alert("Image too large. Please use an image under 2MB.");
+
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("name", document.getElementById("productName").value.trim());
+      fd.append("description", document.getElementById("productDescription").value.trim());
+      fd.append("category", document.getElementById("productCategory").value);
+      fd.append("gender", document.getElementById("productGender").value);
+      fd.append("price", document.getElementById("productPrice").value);
+
+      const btn = document.getElementById("addBtn");
+      btn.disabled = true;
+      btn.textContent = "Uploading...";
+      setStatus("Uploading image + saving product...");
+
+      try{
+        const res = await fetch(API_BASE + "/api/products", {
+          method: "POST",
+          headers: { "x-admin-key": adminKey },
+          body: fd
+        });
+
+        const { text, json } = await readJsonSafe(res);
+        if (!res.ok) {
+          alert(`UPLOAD FAILED\nStatus: ${res.status}\n${text}`);
+          throw new Error(json?.error || json?.details || text || "Failed to add product");
+        }
+
+        alert("Product added!");
+        setStatus("Saved ✅");
+
+        formEl.reset();
+        document.getElementById("imagePreview").classList.add("hidden");
+
+        await loadProducts();
+      }catch(e){
+        setStatus("Error: " + e.message, true);
+        alert("Add error: " + e.message);
+      }finally{
+        btn.disabled = false;
+        btn.textContent = "Add Product";
+      }
+    }
+
+    // =======================
+    // DOM READY
+    // =======================
+    document.addEventListener("DOMContentLoaded", () => {
+      // admin image preview
+      document.getElementById("imageInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = document.getElementById("imagePreview");
+          img.src = ev.target.result;
+          img.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      });
+
+      document.getElementById("productForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await addProduct(e.target);
+      });
+
+      updateCartCount();
+      setAuthLabel();
+      loadProducts();
     });
-
-    loadProducts();
-  });
-</script>
-
+  </script>
 </body>
 </html>
