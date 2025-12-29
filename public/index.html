@@ -170,6 +170,35 @@
       border-color: rgba(231,76,60,0.55);
     }
 
+    /* Footer */
+    .footer{
+      margin-top: 2rem;
+      background: #0b0b0b;
+      color: #fff;
+      padding: 2rem 1.5rem;
+    }
+    .footer-inner{
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 1.2rem;
+    }
+    .footer h3{ font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .footer p, .footer a{ color: rgba(255,255,255,0.85); text-decoration:none; }
+    .footer a:hover{ text-decoration: underline; }
+    .footer-bottom{
+      max-width: 1400px;
+      margin: 1.25rem auto 0;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.75);
+    }
+    @media (max-width: 900px){
+      .footer-inner{ grid-template-columns: 1fr; }
+    }
+
     @media (max-width:768px){ .hero h1{font-size:2.2rem;} .products-grid{ padding:0 1rem; } .nav-container{ padding:0 1rem; } }
   </style>
 </head>
@@ -207,10 +236,13 @@
   <div class="filter-section" id="shopSection">
     <div class="filter-container">
       <button class="filter-btn active" onclick="filterProducts('all', this)">All</button>
-      <button class="filter-btn" onclick="filterProducts('cultural', this)">Cultural</button>
-      <button class="filter-btn" onclick="filterProducts('tshirt', this)">T-Shirts</button>
-      <button class="filter-btn" onclick="filterProducts('men', this)">Men</button>
-      <button class="filter-btn" onclick="filterProducts('women', this)">Women</button>
+      <button class="filter-btn" onclick="filterProducts('bridal', this)">Bridal products</button>
+      <button class="filter-btn" onclick="filterProducts('dinner_dress', this)">Dinner dress</button>
+      <button class="filter-btn" onclick="filterProducts('short_dress', this)">Short dress</button>
+      <button class="filter-btn" onclick="filterProducts('occasional_dress', this)">Occasional dress</button>
+      <button class="filter-btn" onclick="filterProducts('suits', this)">Suits</button>
+      <button class="filter-btn" onclick="filterProducts('pjs', this)">Pjs</button>
+      <button class="filter-btn" onclick="filterProducts('sport_wears', this)">Sport wears</button>
     </div>
   </div>
 
@@ -255,7 +287,7 @@
 
         <div style="margin-top:1rem;">
           <label><b>Product Name</b></label>
-          <input id="productName" required placeholder="e.g., Ethiopian Dress">
+          <input id="productName" required placeholder="e.g., Bridal Dress">
         </div>
 
         <div style="margin-top:1rem;">
@@ -267,9 +299,13 @@
           <div>
             <label><b>Category</b></label>
             <select id="productCategory" required>
-              <option value="cultural">Cultural</option>
-              <option value="tshirt">T-Shirt</option>
-              <option value="dress">Dress</option>
+              <option value="bridal">Bridal products</option>
+              <option value="dinner_dress">Dinner dress</option>
+              <option value="short_dress">Short dress</option>
+              <option value="occasional_dress">Occasional dress</option>
+              <option value="suits">Suits</option>
+              <option value="pjs">Pjs</option>
+              <option value="sport_wears">Sport wears</option>
             </select>
           </div>
           <div>
@@ -296,7 +332,7 @@
     </div>
   </div>
 
-  <!-- EDIT PRODUCT MODAL -->
+  <!-- ✅ EDIT PRODUCT MODAL -->
   <div id="editModal" class="modal-backdrop hidden" onclick="if(event.target.id==='editModal'){closeEditModal()}">
     <div class="modal" style="width:min(720px,100%);" onclick="event.stopPropagation()">
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -327,9 +363,13 @@
         <div>
           <label>Category</label>
           <select id="editCategory">
-            <option value="cultural">Cultural</option>
-            <option value="tshirt">T-Shirt</option>
-            <option value="dress">Dress</option>
+            <option value="bridal">Bridal products</option>
+            <option value="dinner_dress">Dinner dress</option>
+            <option value="short_dress">Short dress</option>
+            <option value="occasional_dress">Occasional dress</option>
+            <option value="suits">Suits</option>
+            <option value="pjs">Pjs</option>
+            <option value="sport_wears">Sport wears</option>
           </select>
         </div>
         <div>
@@ -522,6 +562,31 @@
       <p id="checkoutMsg" style="margin-top:0.75rem;color:#e74c3c;font-weight:900;"></p>
     </div>
   </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <h3>👗 Fashion Boutique</h3>
+        <p>Premium fashion collection — cultural & modern clothing.</p>
+      </div>
+
+      <div>
+        <h3>Contact</h3>
+        <p>📞 Phone: <a href="tel:+251913127880">+251913127880</a></p>
+        <p>✉️ Email: <a href="mailto:info@fashionboutique.com">info@fashionboutique.com</a></p>
+      </div>
+
+      <div>
+        <h3>Hours</h3>
+        <p>Mon–Sat: 9:00 AM – 7:00 PM</p>
+        <p>Sunday: Closed</p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      © <span id="yy"></span> Fashion Boutique. All rights reserved.
+    </div>
+  </footer>
 
   <script>
     const API_BASE =
@@ -786,8 +851,7 @@
         productId: it.productId,
         name: it.name,
         price: it.price,
-        qty: it.qty,
-        image: it.image || ""
+        qty: it.qty
       }))));
 
       fd.append("fullName", fullName);
@@ -988,7 +1052,7 @@
       try{
         const fd = new FormData();
         fd.append("name", "TEST");
-        fd.append("category", "cultural");
+        fd.append("category", "bridal");
         fd.append("gender", "men");
         fd.append("price", "1");
 
@@ -1034,7 +1098,6 @@
       `).join("");
     }
 
-    // EDIT MODAL
     function openEditProduct(id){
       const p = products.find(x => String(x.id) === String(id));
       if(!p) return alert("Product not found");
@@ -1044,7 +1107,7 @@
       document.getElementById("editName").value = p.name || "";
       document.getElementById("editPrice").value = Number(p.price) || 0;
       document.getElementById("editDescription").value = p.description || "";
-      document.getElementById("editCategory").value = p.category || "cultural";
+      document.getElementById("editCategory").value = p.category || "bridal";
       document.getElementById("editGender").value = p.gender || "men";
 
       const prev = document.getElementById("editPreview");
@@ -1063,7 +1126,6 @@
       document.getElementById("editModal").classList.add("hidden");
     }
 
-    // ✅ FIXED: ALWAYS FormData for edit
     async function saveEditProduct(){
       const adminKey = getAdminKey();
       if(!adminKey) return alert("Admin key not set. Click 'Set Admin Key' first.");
@@ -1080,7 +1142,8 @@
       msg.textContent = "";
 
       if(!name) return msg.textContent = "Name is required";
-      if(price === "" || price === null || price === undefined) return msg.textContent = "Price is required";
+      if(!price) return msg.textContent = "Price is required";
+
       if(file && file.size > 2 * 1024 * 1024) return msg.textContent = "Image too large (max 2MB)";
 
       const fd = new FormData();
@@ -1099,10 +1162,7 @@
         });
 
         const { text, json } = await readJsonSafe(res);
-        if(!res.ok){
-          msg.textContent = `Update failed (${res.status}): ${json?.error || json?.details || text}`;
-          return;
-        }
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Update failed");
 
         alert("✅ Updated!");
         closeEditModal();
@@ -1196,6 +1256,10 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      // footer year
+      const yy = document.getElementById("yy");
+      if (yy) yy.textContent = new Date().getFullYear();
+
       document.getElementById("imageInput").addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;

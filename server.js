@@ -1,5 +1,5 @@
 /**
- * server.js (UPDATED - EDIT WORKS)
+ * server.js (UPDATED - FIXED app.options("*") + same API)
  * npm i express cors mongoose multer bcryptjs jsonwebtoken nodemailer dotenv
  */
 
@@ -18,7 +18,6 @@ const nodemailer = require("nodemailer");
 const app = express();
 
 // ---------- BASIC ----------
-// ---------- BASIC ----------
 const corsOptions = {
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -27,12 +26,11 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// ✅ FIX: Express/router in your environment doesn't like "*"
+// ✅ FIX: "app.options('*', ...)" crashes on newer router/path-to-regexp in some installs
 app.options(/.*/, cors(corsOptions));
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
 
 // ---------- UPLOADS ----------
 const UPLOAD_DIR = path.join(__dirname, "uploads");
@@ -59,7 +57,7 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 if (!JWT_SECRET) {
-  console.error("❌ Missing JWT_SECRET in .env");
+  console.error("❌ Missing JWT_SECRET in .env (required for login + orders)");
   process.exit(1);
 }
 
@@ -100,6 +98,7 @@ const orderSchema = new mongoose.Schema(
   {
     orderId: { type: String, required: true, unique: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
     items: [
       {
         productId: { type: String, required: true },
@@ -109,7 +108,9 @@ const orderSchema = new mongoose.Schema(
         image: { type: String, default: "" },
       },
     ],
+
     total: { type: Number, required: true },
+
     customer: {
       fullName: { type: String, required: true },
       phone: { type: String, required: true },
@@ -119,12 +120,14 @@ const orderSchema = new mongoose.Schema(
       country: { type: String, default: "" },
       notes: { type: String, default: "" },
     },
+
     payment: {
       method: { type: String, enum: ["cash", "card", "telebirr"], required: true },
       status: { type: String, enum: ["pending", "paid"], default: "pending" },
       telebirrRef: { type: String, default: "" },
       proofUrl: { type: String, default: "" },
     },
+
     status: { type: String, enum: ["placed", "processing", "delivered", "cancelled"], default: "placed" },
   },
   { timestamps: true }
@@ -135,6 +138,7 @@ const Order = mongoose.model("Order", orderSchema);
 function publicBaseUrl(req) {
   return PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`;
 }
+
 function makeOrderId() {
   return (
     "ORD-" +
@@ -144,7 +148,7 @@ function makeOrderId() {
   );
 }
 
-// ---------- ADMIN ----------
+// ---------- ADMIN MIDDLEWARE ----------
 function requireAdmin(req, res, next) {
   if (!ADMIN_API_KEY) return res.status(500).json({ error: "Server missing ADMIN_API_KEY" });
   const key = req.headers["x-admin-key"];
@@ -152,19 +156,21 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ---------- AUTH ----------
+// ---------- AUTH MIDDLEWARE ----------
 function auth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+
   if (!token) return res.status(401).json({ error: "No token provided" });
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     const id = decoded.id || decoded.userId || decoded._id;
     if (!id) return res.status(401).json({ error: "Token missing user id" });
+
     req.user = { id: String(id) };
     return next();
-  } catch {
+  } catch (e) {
     return res.status(401).json({ error: "Invalid token" });
   }
 }
@@ -183,6 +189,12 @@ const uploadProductImage = multer({
   limits: { fileSize: 2 * 1024 * 1024 },
 }).single("image");
 
+// ✅ For EDIT: image is OPTIONAL
+const uploadProductEdit = multer({
+  storage: productStorage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+}).single("image");
+
 // ---------- MULTER (ORDER PROOF) ----------
 const proofStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -194,7 +206,11 @@ const proofStorage = multer.diskStorage({
 
 const uploadOrder = multer({
   storage: proofStorage,
-  limits: { fileSize: 3 * 1024 * 1024, fieldSize: 20 * 1024 * 1024, fields: 200 },
+  limits: {
+    fileSize: 3 * 1024 * 1024,
+    fieldSize: 20 * 1024 * 1024,
+    fields: 200,
+  },
 }).single("paymentProof");
 
 // ---------- EMAIL (OPTIONAL) ----------
@@ -245,17 +261,16 @@ ${items}
       subject: `New Order ${order.orderId} (${order.total} ETB)`,
       text,
     });
-  } catch {
-    // ignore email errors
+  } catch (e) {
+    // ignore
   }
 }
 
 // ---------- ROUTES ----------
 app.get("/", (req, res) => res.json({ ok: true }));
 
-// ✅ confirm Render deployed latest backend
 app.get("/api/version", (req, res) => {
-  res.json({ version: "2025-12-29-edit-fixed-formdata" });
+  res.json({ version: "2025-12-29-categories-footer" });
 });
 
 // AUTH
@@ -302,6 +317,12 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
+app.get("/api/auth/me", auth, async (req, res) => {
+  const user = await User.findById(req.user.id).lean();
+  if (!user) return res.status(404).json({ error: "User not found" });
+  return res.json({ id: user._id.toString(), fullName: user.fullName, email: user.email });
+});
+
 // PRODUCTS
 app.get("/api/products", async (req, res) => {
   try {
@@ -322,7 +343,7 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
-// CREATE (image required)
+// CREATE product (image required)
 app.post("/api/products", requireAdmin, (req, res) => {
   uploadProductImage(req, res, async (err) => {
     try {
@@ -359,9 +380,9 @@ app.post("/api/products", requireAdmin, (req, res) => {
   });
 });
 
-// ✅ EDIT (image optional) - SAME multer handler, but file optional
+// EDIT product (image optional)
 app.put("/api/products/:id", requireAdmin, (req, res) => {
-  uploadProductImage(req, res, async (err) => {
+  uploadProductEdit(req, res, async (err) => {
     try {
       if (err) return res.status(400).json({ error: "Upload error", details: err.message });
 
