@@ -29,8 +29,7 @@
     }
     .pill:hover { border-color: rgba(255,255,255,0.5); }
 
-    .cart-icon { position: relative; font-size: 1.25rem; cursor: pointer; user-select: none; }
-    .cart-count { position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+    .cart-count { background: #e74c3c; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; margin-left: 0.35rem; }
 
     .hero { background: linear-gradient(135deg, rgba(0,0,0,0.62), rgba(0,0,0,0.35)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23667eea" width="1200" height="600"/></svg>'); background-size: cover; color: white; padding: 6rem 2rem 4rem; text-align: center; }
     .hero h1 { font-size: 3.2rem; margin-bottom: 0.8rem; font-weight: 900; }
@@ -50,6 +49,7 @@
     .product-category { font-size: 0.82rem; color: #636e72; text-transform: uppercase; font-weight: 800; }
     .product-name { font-size: 1.15rem; font-weight: 900; margin: 0.35rem 0; }
     .product-price { font-size: 1.35rem; font-weight: 900; color: #e74c3c; margin: 0.8rem 0 0.9rem; }
+
     .btn { border:none; border-radius:10px; font-weight:900; cursor:pointer; }
     .btn-dark { background:#2d3436; color:#fff; padding:0.85rem; width:100%; }
     .btn-dark:hover { filter:brightness(1.05); }
@@ -79,7 +79,6 @@
     .admin-panel { max-width:900px; margin:3rem auto; padding:2rem; background:white; border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.1); }
     .image-upload-area { border:3px dashed #ddd; border-radius:12px; padding:2rem; text-align:center; cursor:pointer; }
     .image-preview { max-width:100%; max-height:280px; margin-top:1rem; border-radius:10px; }
-
     .product-list { margin-top:1.5rem; }
     .product-item { background:white; padding:1rem; border-radius:14px; margin-bottom:1rem; box-shadow:0 3px 10px rgba(0,0,0,0.08); display:flex; gap:1rem; align-items:center; }
     .product-item-image { width:92px; height:92px; border-radius:10px; overflow:hidden; background:#f1f1f1; }
@@ -125,17 +124,49 @@
     }
     .cart-item{
       display:flex; gap:0.75rem;
-      padding:0.75rem 0;
+      padding:0.85rem 0;
       border-bottom:1px solid #eee;
       align-items:center;
+      position:relative;
     }
     .cart-thumb{ width:72px; height:72px; border-radius:12px; overflow:hidden; background:#f1f1f1; flex:0 0 auto; }
     .cart-thumb img{ width:100%; height:100%; object-fit:cover; }
+
     .qty{
       display:flex; align-items:center; gap:0.5rem; margin-top:0.35rem;
     }
-    .qty button{ width:34px; height:34px; border-radius:10px; border:1px solid #ddd; background:#fff; font-weight:900; cursor:pointer; }
+    .qty button{
+      width:34px; height:34px;
+      border-radius:10px;
+      border:1px solid #ddd;
+      background:#fff;
+      font-weight:900;
+      cursor:pointer;
+    }
     .qty span{ font-weight:900; min-width:24px; text-align:center; display:inline-block; }
+
+    /* ✅ Red X Remove */
+    .remove-x{
+      position:absolute;
+      top:10px;
+      right:8px;
+      width:30px;
+      height:30px;
+      border-radius:10px;
+      border:1px solid rgba(231,76,60,0.35);
+      background: rgba(231,76,60,0.08);
+      color:#e74c3c;
+      font-weight:1000;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+    }
+    .remove-x:hover{
+      background: rgba(231,76,60,0.16);
+      border-color: rgba(231,76,60,0.55);
+    }
 
     @media (max-width:768px){ .hero h1{font-size:2.2rem;} .products-grid{ padding:0 1rem; } .nav-container{ padding:0 1rem; } }
   </style>
@@ -152,7 +183,7 @@
         <li><a onclick="openAdmin()">Admin</a></li>
 
         <li>
-          <div class="pill" onclick="openAuth()">
+          <div class="pill" onclick="openAccountMenu()">
             👤 <span id="authLabel">Login</span>
           </div>
         </li>
@@ -326,7 +357,9 @@
         <span id="cartSubtotal">0 ETB</span>
       </div>
 
-      <button class="btn-primary" style="width:100%;margin-top:1rem;" onclick="openCheckout()">Checkout</button>
+      <!-- ✅ Buttons: Continue Shopping + Checkout -->
+      <button class="btn btn-dark" style="width:100%;margin-top:1rem;" onclick="continueShopping()">Continue Shopping</button>
+      <button class="btn-primary" style="width:100%;margin-top:0.6rem;" onclick="openCheckout()">Checkout</button>
       <button class="btn btn-dark" style="width:100%;margin-top:0.6rem;" onclick="clearCart()">Clear Cart</button>
     </div>
   </div>
@@ -460,7 +493,6 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
-
     function formatMoney(n){ return (Number(n)||0).toFixed(0); }
 
     async function readJsonSafe(res){
@@ -497,6 +529,11 @@
       document.getElementById("ordersSection").classList.add("hidden");
       document.getElementById("adminSection").classList.add("hidden");
       document.getElementById("shopSection").scrollIntoView({ behavior:"smooth" });
+    }
+
+    function continueShopping(){
+      closeCart();
+      showShop();
     }
 
     function openAdmin(){
@@ -635,16 +672,20 @@
       box.innerHTML = cart.map(it => `
         <div class="cart-item">
           <div class="cart-thumb"><img src="${it.image || ''}" onerror="this.style.display='none'"></div>
+
           <div style="flex:1;">
             <div style="font-weight:900;">${escapeHtml(it.name || "")}</div>
             <div style="color:#e74c3c;font-weight:900;margin-top:0.2rem;">${formatMoney(it.price)} ETB</div>
+
             <div class="qty">
               <button onclick="changeQty('${String(it.productId).replaceAll("'","")}', -1)">-</button>
               <span>${Number(it.qty)||1}</span>
               <button onclick="changeQty('${String(it.productId).replaceAll("'","")}', 1)">+</button>
-              <button class="btn-danger" style="margin-left:auto;" onclick="removeFromCart('${String(it.productId).replaceAll("'","")}')">Remove</button>
             </div>
           </div>
+
+          <!-- ✅ Red X remove -->
+          <div class="remove-x" title="Remove" onclick="removeFromCart('${String(it.productId).replaceAll("'","")}')">✕</div>
         </div>
       `).join("");
 
@@ -697,20 +738,16 @@
       if(!phone) return msgEl.textContent = "Phone is required";
       if(!address) return msgEl.textContent = "Address is required";
 
-      if(paymentMethod === "telebirr" && !telebirrRef && !proofFile){
-        // allow, but encourage
-        // msgEl.textContent = "Please provide Telebirr reference or upload proof (recommended).";
-        // return;
-      }
-
       const fd = new FormData();
+
+      // ✅ FIX: DO NOT SEND IMAGE IN ITEMS (prevents Multer "Field value too long")
       fd.append("items", JSON.stringify(cart.map(it => ({
         productId: it.productId,
         name: it.name,
         price: it.price,
-        qty: it.qty,
-        image: it.image
+        qty: it.qty
       }))));
+
       fd.append("fullName", fullName);
       fd.append("phone", phone);
       fd.append("email", email);
@@ -742,7 +779,6 @@
         cart = [];
         saveCart();
 
-        // show orders
         await openOrders();
       }catch(e){
         msgEl.textContent = e.message;
@@ -780,8 +816,17 @@
 
     function setAuthLabel(){
       const lbl = document.getElementById("authLabel");
-      if(getToken()) lbl.textContent = "Account";
-      else lbl.textContent = "Login";
+      lbl.textContent = getToken() ? "Account" : "Login";
+    }
+
+    function openAccountMenu(){
+      if(!getToken()){
+        openAuth();
+        return;
+      }
+      const choice = prompt("Type: 1 = My Orders, 2 = Logout");
+      if(choice === "1") openOrders();
+      if(choice === "2"){ clearToken(); setAuthLabel(); alert("Logged out."); }
     }
 
     async function doRegister(){
@@ -833,19 +878,6 @@
       }
     }
 
-    function logoutCustomer(){
-      clearToken();
-      setAuthLabel();
-      alert("Logged out.");
-    }
-
-    // If user clicks Account when logged in => ask logout or orders
-    document.addEventListener("click", (e) => {
-      if(e.target && e.target.id === "authLabel" && getToken()){
-        // nothing
-      }
-    });
-
     // =======================
     // MY ORDERS
     // =======================
@@ -869,9 +901,6 @@
         box.innerHTML = orders.map(o => {
           const itemsHtml = (o.items || []).map(it => `
             <div style="display:flex;gap:0.75rem;align-items:center;padding:0.5rem 0;border-bottom:1px solid #f3f3f3;">
-              <div style="width:56px;height:56px;border-radius:12px;overflow:hidden;background:#f1f1f1;">
-                <img src="${it.image || ''}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
-              </div>
               <div style="flex:1;">
                 <div style="font-weight:900;">${escapeHtml(it.name || "")}</div>
                 <div style="color:#636e72;font-weight:800;font-size:0.95rem;">Qty: ${Number(it.qty)||1} • ${formatMoney(it.price)} ETB</div>
@@ -907,7 +936,7 @@
     }
 
     // =======================
-    // ADMIN (existing)
+    // ADMIN (same)
     // =======================
     function setAdminKey() {
       const k = prompt("Enter ADMIN_API_KEY:");
@@ -937,11 +966,7 @@
         });
 
         const { text, json } = await readJsonSafe(res);
-
         if (res.status === 401) return alert("❌ Unauthorized. Admin key is wrong.");
-        if (res.status === 500 && (json?.error || "").includes("Server missing ADMIN")) {
-          return alert("❌ Server missing ADMIN_API_KEY on backend.");
-        }
         if (res.status === 400 && (json?.error || "").toLowerCase().includes("image")) {
           return alert("✅ Admin key is correct (auth passed).");
         }
@@ -1026,10 +1051,7 @@
         });
 
         const { text, json } = await readJsonSafe(res);
-        if (!res.ok) {
-          alert(`UPLOAD FAILED\nStatus: ${res.status}\n${text}`);
-          throw new Error(json?.error || json?.details || text || "Failed to add product");
-        }
+        if (!res.ok) throw new Error(json?.error || json?.details || text || "Failed to add product");
 
         alert("Product added!");
         setStatus("Saved ✅");
@@ -1051,7 +1073,6 @@
     // DOM READY
     // =======================
     document.addEventListener("DOMContentLoaded", () => {
-      // admin image preview
       document.getElementById("imageInput").addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
@@ -1077,3 +1098,4 @@
   </script>
 </body>
 </html>
+  

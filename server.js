@@ -1,377 +1,470 @@
+/**
+ * server.js (ALL-IN-ONE, DEBUG + FIX)
+ * npm i express cors mongoose multer bcryptjs jsonwebtoken nodemailer dotenv
+ */
+
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 const mongoose = require("mongoose");
 const multer = require("multer");
-const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 const app = express();
 
-// -------------------
-// CORS
-// -------------------
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "x-admin-key", "Authorization"],
-  })
-);
-app.options(/.*/, cors());
+// ---------- BASIC ----------
+app.use(cors());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// JSON for non-multipart endpoints
-app.use(express.json({ limit: "2mb" }));
+// ---------- UPLOADS ----------
+const UPLOAD_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+app.use("/uploads", express.static(UPLOAD_DIR));
 
-const PORT = process.env.PORT || 3000;
-const { MONGODB_URI, ADMIN_API_KEY, JWT_SECRET } = process.env;
+// ---------- ENV CHECK ----------
+const {
+  PORT = 3000,
+  MONGODB_URI,
+  ADMIN_API_KEY,
+  JWT_SECRET,
+  OWNER_EMAIL,
+  SMTP_HOST,
+  SMTP_PORT,
+  SMTP_SECURE,
+  SMTP_USER,
+  SMTP_PASS,
+  PUBLIC_BASE_URL,
+} = process.env;
 
-if (!MONGODB_URI) console.error("❌ Missing MONGODB_URI in env");
-if (!ADMIN_API_KEY) console.error("❌ Missing ADMIN_API_KEY in env");
-if (!JWT_SECRET) console.error("❌ Missing JWT_SECRET in env");
+if (!MONGODB_URI) {
+  console.error("❌ Missing MONGODB_URI in .env");
+  process.exit(1);
+}
+if (!JWT_SECRET) {
+  console.error("❌ Missing JWT_SECRET in .env (required for login + orders)");
+  process.exit(1);
+}
 
-// -------------------
-// MongoDB Connect
-// -------------------
+// ---------- MONGO ----------
 mongoose
   .connect(MONGODB_URI)
-  .then(() => console.log("✅ Connected to MongoDB Atlas"))
-  .catch((err) => console.error("❌ MongoDB error:", err.message));
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => {
+    console.error("❌ MongoDB error:", err.message);
+    process.exit(1);
+  });
 
-// -------------------
-// Schemas
-// -------------------
-const productSchema = new mongoose.Schema(
-  {
-    id: { type: String, required: true, unique: true }, // our custom id
-    name: { type: String, required: true },
-    description: { type: String, default: "" },
-    category: { type: String, required: true },
-    gender: { type: String, required: true },
-    price: { type: Number, required: true },
-    image: { type: String, required: true }, // base64 data URL
-    createdAt: { type: Date, default: Date.now },
-  },
-  { collection: "fashion" }
-);
-
+// ---------- MODELS ----------
 const userSchema = new mongoose.Schema(
   {
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    fullName: { type: String, required: true, trim: true },
+    email: { type: String, required: true, trim: true, lowercase: true, unique: true },
     passwordHash: { type: String, required: true },
-    fullName: { type: String, default: "" },
-    createdAt: { type: Date, default: Date.now },
   },
-  { collection: "users" }
+  { timestamps: true }
 );
+const User = mongoose.model("User", userSchema);
+
+const productSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    description: { type: String, default: "" },
+    category: { type: String, required: true, trim: true },
+    gender: { type: String, required: true, trim: true },
+    price: { type: Number, required: true },
+    image: { type: String, default: "" },
+  },
+  { timestamps: true }
+);
+const Product = mongoose.model("Product", productSchema);
 
 const orderSchema = new mongoose.Schema(
   {
     orderId: { type: String, required: true, unique: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "User" },
+
+    // IMPORTANT:
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
     items: [
       {
-        productId: String,
-        name: String,
-        price: Number,
-        qty: Number,
-        image: String,
+        productId: { type: String, required: true },
+        name: { type: String, required: true },
+        price: { type: Number, required: true },
+        qty: { type: Number, required: true },
+        image: { type: String, default: "" },
       },
     ],
-    subtotal: Number,
-    shippingFee: Number,
-    total: Number,
+
+    total: { type: Number, required: true },
 
     customer: {
-      fullName: String,
-      email: String,
-      phone: String,
-      address: String,
-      city: String,
-      country: String,
-      notes: String,
+      fullName: { type: String, required: true },
+      phone: { type: String, required: true },
+      email: { type: String, default: "" },
+      address: { type: String, required: true },
+      city: { type: String, default: "" },
+      country: { type: String, default: "" },
+      notes: { type: String, default: "" },
     },
 
     payment: {
-      method: { type: String, default: "cash" }, // card | telebirr | cash
-      status: { type: String, default: "pending" }, // pending | confirmed
+      method: { type: String, enum: ["cash", "card", "telebirr"], required: true },
+      status: { type: String, enum: ["pending", "paid"], default: "pending" },
       telebirrRef: { type: String, default: "" },
-      proofImageBase64: { type: String, default: "" }, // optional upload
+      proofUrl: { type: String, default: "" },
     },
 
-    status: { type: String, default: "placed" }, // placed | processing | delivered | cancelled
-    createdAt: { type: Date, default: Date.now },
+    status: { type: String, enum: ["placed", "processing", "delivered", "cancelled"], default: "placed" },
   },
-  { collection: "orders" }
+  { timestamps: true }
 );
-
-const Product = mongoose.model("Product", productSchema);
-const User = mongoose.model("User", userSchema);
 const Order = mongoose.model("Order", orderSchema);
 
-// -------------------
-// Multer (memory) for product images + payment proof upload
-// -------------------
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
-});
+// ---------- HELPERS ----------
+function publicBaseUrl(req) {
+  return PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`;
+}
 
-// -------------------
-// Admin Auth
-// -------------------
+function makeOrderId() {
+  return "ORD-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2, 7).toUpperCase();
+}
+
+// ---------- ADMIN MIDDLEWARE ----------
 function requireAdmin(req, res, next) {
-  const key = req.header("x-admin-key");
   if (!ADMIN_API_KEY) return res.status(500).json({ error: "Server missing ADMIN_API_KEY" });
+  const key = req.headers["x-admin-key"];
   if (!key || key !== ADMIN_API_KEY) return res.status(401).json({ error: "Unauthorized" });
   next();
 }
 
-// -------------------
-// Customer Auth (JWT)
-// -------------------
-function signToken(user) {
-  return jwt.sign(
-    { uid: user._id.toString(), email: user.email },
-    JWT_SECRET,
-    { expiresIn: "30d" }
-  );
-}
+// ---------- AUTH MIDDLEWARE (DEBUG) ----------
+function auth(req, res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
 
-function requireUser(req, res, next) {
+  // DEBUG
+  console.log("🔎 AUTH header:", header ? "present" : "missing");
+
+  if (!token) return res.status(401).json({ error: "No token provided" });
+
   try {
-    const auth = req.header("Authorization") || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-    if (!token) return res.status(401).json({ error: "Missing token" });
+    const decoded = jwt.verify(token, JWT_SECRET);
 
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload; // { uid, email }
-    next();
+    // DEBUG: show payload keys only
+    console.log("🔎 JWT decoded keys:", Object.keys(decoded));
+
+    // We accept several possible payload field names:
+    const id = decoded.id || decoded.userId || decoded._id;
+
+    if (!id) return res.status(401).json({ error: "Token missing user id" });
+
+    req.user = { id: String(id) };
+    return next();
   } catch (e) {
-    return res.status(401).json({ error: "Invalid/expired token" });
+    console.log("❌ JWT verify error:", e.message);
+    return res.status(401).json({ error: "Invalid token" });
   }
 }
 
-// -------------------
-// Helpers
-// -------------------
-function extFromMime(mime) {
-  if (mime === "image/jpeg") return "jpeg";
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-  if (mime === "image/gif") return "gif";
-  return "png";
-}
+// ---------- MULTER ----------
+const productStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const safe = (file.originalname || "image").replace(/[^\w.\-]+/g, "_");
+    cb(null, Date.now() + "_" + safe);
+  },
+});
+const uploadProductImage = multer({
+  storage: productStorage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+}).single("image");
 
-function makeId() {
-  return Date.now().toString() + "-" + crypto.randomBytes(3).toString("hex");
-}
-
-function makeOrderId() {
-  return "ORD-" + Date.now().toString() + "-" + crypto.randomBytes(2).toString("hex").toUpperCase();
-}
-
-function validateProductFields(body) {
-  if (!body.name) return "Product name is required";
-  if (!body.category) return "Category is required";
-  if (!body.gender) return "Gender is required";
-  const price = Number(body.price);
-  if (Number.isNaN(price)) return "Price must be a number";
-  return null;
-}
-
-// -------------------
-// Routes
-// -------------------
-app.get("/", (req, res) => res.send("✅ Fashion backend running"));
-app.get("/health", (req, res) => res.json({ ok: true }));
-
-// ---------- PRODUCTS ----------
-app.get("/api/products", async (req, res) => {
-  try {
-    const products = await Product.find({}).sort({ createdAt: -1 }).lean();
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to load products", details: err.message });
-  }
+// Orders proof upload + fix "Field value too long"
+const proofStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const safe = (file.originalname || "proof").replace(/[^\w.\-]+/g, "_");
+    cb(null, Date.now() + "_proof_" + safe);
+  },
 });
 
-app.post("/api/products", requireAdmin, upload.single("image"), async (req, res) => {
+const uploadOrder = multer({
+  storage: proofStorage,
+  limits: {
+    fileSize: 3 * 1024 * 1024,
+    fieldSize: 20 * 1024 * 1024, // ✅ important
+    fields: 200,
+  },
+}).single("paymentProof");
+
+// ---------- EMAIL (OPTIONAL) ----------
+function getMailer() {
+  if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) return null;
+  const secure = String(SMTP_SECURE || "true").toLowerCase() === "true";
+  return nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT),
+    secure,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+}
+
+async function sendOrderEmailSafe({ to, order, req }) {
+  if (!to) return console.warn("⚠️ OWNER_EMAIL missing — skipping email");
+  const mailer = getMailer();
+  if (!mailer) return console.warn("⚠️ SMTP env missing — skipping email");
+
   try {
-    const msg = validateProductFields(req.body);
-    if (msg) return res.status(400).json({ error: msg });
-    if (!req.file) return res.status(400).json({ error: "Image file is required" });
+    const items = (order.items || []).map((i) => `• ${i.name} x${i.qty} - ${i.price} ETB`).join("\n");
+    const proof = order.payment?.proofUrl ? `${publicBaseUrl(req)}${order.payment.proofUrl}` : "-";
 
-    const mime = req.file.mimetype || "image/png";
-    const ext = extFromMime(mime);
-    const b64 = req.file.buffer.toString("base64");
-    const dataUrl = `data:image/${ext};base64,${b64}`;
+    const text =
+`New Order ✅
 
-    const product = {
-      id: makeId(),
-      name: String(req.body.name).trim(),
-      description: String(req.body.description || "").trim(),
-      category: String(req.body.category).trim(),
-      gender: String(req.body.gender).trim(),
-      price: Number(req.body.price) || 0,
-      image: dataUrl,
-      createdAt: new Date(),
-    };
+Order: ${order.orderId}
+Total: ${order.total} ETB
 
-    const saved = await Product.create(product);
-    res.json({ ok: true, product: saved });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to add product", details: err.message });
+Customer:
+${order.customer.fullName} | ${order.customer.phone}
+${order.customer.address}
+
+Payment:
+${order.payment.method} | ${order.payment.status}
+TelebirrRef: ${order.payment.telebirrRef || "-"}
+Proof: ${proof}
+
+Items:
+${items}
+`;
+
+    await mailer.sendMail({
+      from: SMTP_USER,
+      to,
+      subject: `New Order ${order.orderId} (${order.total} ETB)`,
+      text,
+    });
+
+    console.log("✅ Email sent to OWNER_EMAIL");
+  } catch (e) {
+    console.warn("⚠️ Email failed (order saved):", e.message);
   }
-});
+}
 
-app.delete("/api/products/:id", requireAdmin, async (req, res) => {
-  try {
-    const id = String(req.params.id);
-    const deleted = await Product.findOneAndDelete({ id }).lean();
-    if (!deleted) return res.status(404).json({ error: "Product not found" });
-    res.json({ ok: true, deletedId: id });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to delete product", details: err.message });
-  }
-});
+// ---------- ROUTES ----------
+app.get("/", (req, res) => res.json({ ok: true }));
 
-// ---------- AUTH ----------
+// AUTH
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { email, password, fullName } = req.body || {};
-    const em = String(email || "").trim().toLowerCase();
-    const pw = String(password || "");
-    const fn = String(fullName || "").trim();
+    const { fullName, email, password } = req.body || {};
+    if (!fullName || !email || !password) return res.status(400).json({ error: "fullName, email, password required" });
+    if (String(password).length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
 
-    if (!em) return res.status(400).json({ error: "Email is required" });
-    if (!pw || pw.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+    const existing = await User.findOne({ email: String(email).toLowerCase() });
+    if (existing) return res.status(400).json({ error: "Email already registered" });
 
-    const exists = await User.findOne({ email: em }).lean();
-    if (exists) return res.status(400).json({ error: "Email already registered" });
+    const passwordHash = await bcrypt.hash(String(password), 10);
+    const user = await User.create({
+      fullName: String(fullName).trim(),
+      email: String(email).toLowerCase().trim(),
+      passwordHash,
+    });
 
-    const passwordHash = await bcrypt.hash(pw, 10);
-    const user = await User.create({ email: em, passwordHash, fullName: fn });
+    // IMPORTANT: include id
+    const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET, { expiresIn: "7d" });
 
-    const token = signToken(user);
-    res.json({ ok: true, token, user: { email: user.email, fullName: user.fullName } });
-  } catch (err) {
-    res.status(500).json({ error: "Register failed", details: err.message });
+    return res.json({ token });
+  } catch (e) {
+    return res.status(500).json({ error: "Register failed", details: e.message });
   }
 });
 
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body || {};
-    const em = String(email || "").trim().toLowerCase();
-    const pw = String(password || "");
+    if (!email || !password) return res.status(400).json({ error: "email and password required" });
 
-    if (!em || !pw) return res.status(400).json({ error: "Email and password are required" });
+    const user = await User.findOne({ email: String(email).toLowerCase() });
+    if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
-    const user = await User.findOne({ email: em });
-    if (!user) return res.status(401).json({ error: "Invalid email or password" });
+    const ok = await bcrypt.compare(String(password), user.passwordHash);
+    if (!ok) return res.status(400).json({ error: "Invalid credentials" });
 
-    const ok = await bcrypt.compare(pw, user.passwordHash);
-    if (!ok) return res.status(401).json({ error: "Invalid email or password" });
-
-    const token = signToken(user);
-    res.json({ ok: true, token, user: { email: user.email, fullName: user.fullName } });
-  } catch (err) {
-    res.status(500).json({ error: "Login failed", details: err.message });
+    const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET, { expiresIn: "7d" });
+    return res.json({ token });
+  } catch (e) {
+    return res.status(500).json({ error: "Login failed", details: e.message });
   }
 });
 
-app.get("/api/me", requireUser, async (req, res) => {
+// ✅ TEST TOKEN (THIS WILL TELL US IF TOKEN IS WORKING)
+app.get("/api/auth/me", auth, async (req, res) => {
+  const user = await User.findById(req.user.id).lean();
+  if (!user) return res.status(404).json({ error: "User not found" });
+  return res.json({ id: user._id.toString(), fullName: user.fullName, email: user.email });
+});
+
+// PRODUCTS
+app.get("/api/products", async (req, res) => {
   try {
-    const user = await User.findById(req.user.uid).lean();
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ ok: true, user: { email: user.email, fullName: user.fullName } });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to load profile", details: err.message });
+    const list = await Product.find().sort({ createdAt: -1 }).lean();
+    res.json(
+      list.map((p) => ({
+        id: p._id.toString(),
+        name: p.name,
+        description: p.description,
+        category: p.category,
+        gender: p.gender,
+        price: p.price,
+        image: p.image,
+      }))
+    );
+  } catch (e) {
+    res.status(500).json({ error: "Failed to load products", details: e.message });
   }
 });
 
-// ---------- ORDERS ----------
-app.post("/api/orders", requireUser, upload.single("paymentProof"), async (req, res) => {
-  try {
-    const body = req.body || {};
-    const items = JSON.parse(body.items || "[]");
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: "Cart items are required" });
+app.post("/api/products", requireAdmin, (req, res) => {
+  uploadProductImage(req, res, async (err) => {
+    try {
+      if (err) return res.status(400).json({ error: "Upload error", details: err.message });
+      if (!req.file) return res.status(400).json({ error: "Image file is required" });
+
+      const { name, description = "", category, gender, price } = req.body || {};
+      if (!name || !category || !gender || !price) return res.status(400).json({ error: "name, category, gender, price required" });
+
+      const imgUrl = `${publicBaseUrl(req)}/uploads/${req.file.filename}`;
+
+      const created = await Product.create({
+        name: String(name).trim(),
+        description: String(description || "").trim(),
+        category: String(category).trim(),
+        gender: String(gender).trim(),
+        price: Number(price),
+        image: imgUrl,
+      });
+
+      res.json({
+        id: created._id.toString(),
+        name: created.name,
+        description: created.description,
+        category: created.category,
+        gender: created.gender,
+        price: created.price,
+        image: created.image,
+      });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to add product", details: e.message });
     }
-
-    // customer info
-    const customer = {
-      fullName: String(body.fullName || "").trim(),
-      email: String(body.email || "").trim(),
-      phone: String(body.phone || "").trim(),
-      address: String(body.address || "").trim(),
-      city: String(body.city || "").trim(),
-      country: String(body.country || "").trim(),
-      notes: String(body.notes || "").trim(),
-    };
-
-    if (!customer.fullName) return res.status(400).json({ error: "Full name is required" });
-    if (!customer.phone) return res.status(400).json({ error: "Phone is required" });
-    if (!customer.address) return res.status(400).json({ error: "Address is required" });
-
-    const paymentMethod = String(body.paymentMethod || "cash");
-    const telebirrRef = String(body.telebirrRef || "").trim();
-
-    let proofImageBase64 = "";
-    if (req.file) {
-      const mime = req.file.mimetype || "image/png";
-      const ext = extFromMime(mime);
-      const b64 = req.file.buffer.toString("base64");
-      proofImageBase64 = `data:image/${ext};base64,${b64}`;
-    }
-
-    // totals
-    const subtotal = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 1), 0);
-    const shippingFee = 0; // you can change later
-    const total = subtotal + shippingFee;
-
-    const order = await Order.create({
-      orderId: makeOrderId(),
-      userId: req.user.uid,
-      items: items.map((it) => ({
-        productId: String(it.productId || it.id || ""),
-        name: String(it.name || ""),
-        price: Number(it.price) || 0,
-        qty: Number(it.qty) || 1,
-        image: String(it.image || ""),
-      })),
-      subtotal,
-      shippingFee,
-      total,
-      customer,
-      payment: {
-        method: paymentMethod,
-        status: paymentMethod === "telebirr" ? "pending" : "pending",
-        telebirrRef: telebirrRef,
-        proofImageBase64,
-      },
-      status: "placed",
-      createdAt: new Date(),
-    });
-
-    res.json({ ok: true, order });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to place order", details: err.message });
-  }
+  });
 });
 
-app.get("/api/orders/my", requireUser, async (req, res) => {
+app.delete("/api/products/:id", requireAdmin, async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.user.uid }).sort({ createdAt: -1 }).lean();
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to load orders", details: err.message });
+    const deleted = await Product.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "Product not found" });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: "Delete failed", details: e.message });
   }
 });
 
-// -------------------
-// Start server
-// -------------------
+// ORDERS
+app.post("/api/orders", auth, (req, res) => {
+  uploadOrder(req, res, async (err) => {
+    try {
+      // DEBUG
+      console.log("🧾 /api/orders called. userId from token =", req.user?.id || "MISSING");
+
+      if (err) return res.status(400).json({ error: "Upload error", details: err.message });
+
+      let items = [];
+      try {
+        items = JSON.parse(req.body.items || "[]");
+      } catch {
+        return res.status(400).json({ error: "Invalid items JSON" });
+      }
+      if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: "Cart items required" });
+
+      const fullName = (req.body.fullName || "").trim();
+      const phone = (req.body.phone || "").trim();
+      const email = (req.body.email || "").trim();
+      const address = (req.body.address || "").trim();
+      const city = (req.body.city || "").trim();
+      const country = (req.body.country || "").trim();
+      const notes = (req.body.notes || "").trim();
+
+      const paymentMethod = (req.body.paymentMethod || "cash").trim();
+      const telebirrRef = (req.body.telebirrRef || "").trim();
+
+      if (!fullName) return res.status(400).json({ error: "Full name required" });
+      if (!phone) return res.status(400).json({ error: "Phone required" });
+      if (!address) return res.status(400).json({ error: "Address required" });
+
+      const total = items.reduce((sum, it) => sum + (Number(it.price) || 0) * (Number(it.qty) || 1), 0);
+
+      const proofUrl = req.file ? `/uploads/${req.file.filename}` : "";
+
+      // ✅ ensure ObjectId casting works
+      const userObjectId = new mongoose.Types.ObjectId(req.user.id);
+
+      const orderDoc = await Order.create({
+        orderId: makeOrderId(),
+        userId: userObjectId,
+        items: items.map((it) => ({
+          productId: String(it.productId || ""),
+          name: String(it.name || ""),
+          price: Number(it.price) || 0,
+          qty: Number(it.qty) || 1,
+          image: String(it.image || ""),
+        })),
+        total,
+        customer: { fullName, phone, email, address, city, country, notes },
+        payment: {
+          method: ["cash", "card", "telebirr"].includes(paymentMethod) ? paymentMethod : "cash",
+          status: "pending",
+          telebirrRef,
+          proofUrl,
+        },
+        status: "placed",
+      });
+
+      await sendOrderEmailSafe({ to: OWNER_EMAIL, order: orderDoc.toObject(), req });
+
+      return res.json({
+        ok: true,
+        order: { orderId: orderDoc.orderId, total: orderDoc.total, status: orderDoc.status, createdAt: orderDoc.createdAt },
+      });
+    } catch (e) {
+      return res.status(500).json({ error: "Order failed", details: e.message });
+    }
+  });
+});
+
+app.get("/api/orders/my", auth, async (req, res) => {
+  try {
+    const userObjectId = new mongoose.Types.ObjectId(req.user.id);
+    const orders = await Order.find({ userId: userObjectId }).sort({ createdAt: -1 }).lean();
+    res.json(
+      orders.map((o) => ({
+        orderId: o.orderId,
+        status: o.status,
+        total: o.total,
+        createdAt: o.createdAt,
+        items: o.items || [],
+        payment: o.payment || {},
+      }))
+    );
+  } catch (e) {
+    res.status(500).json({ error: "Failed to load orders", details: e.message });
+  }
+});
+
+// ---------- START ----------
 app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
