@@ -55,6 +55,8 @@
     .btn-dark:hover { filter:brightness(1.05); }
     .btn-primary { padding: 0.85rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; border-radius:10px; font-weight:900; cursor:pointer; }
     .btn-danger { padding: 0.7rem 1rem; background:#e74c3c; color:white; border:none; border-radius:10px; font-weight:900; cursor:pointer; }
+    .btn-ghost { padding: 0.7rem 1rem; background:#f1f3f5; color:#2d3436; border:none; border-radius:10px; font-weight:900; cursor:pointer; }
+    .btn-ghost:hover { filter:brightness(0.98); }
 
     .hidden { display:none !important; }
     .loading { text-align:center; padding:3rem; font-size:1.1rem; color:#636e72; }
@@ -84,6 +86,7 @@
     .product-item-image { width:92px; height:92px; border-radius:10px; overflow:hidden; background:#f1f1f1; }
     .product-item-image img { width:100%; height:100%; object-fit:cover; }
     .product-item-details { flex:1; }
+    .product-actions { display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end; }
 
     /* Modal */
     .modal-backdrop{
@@ -145,7 +148,6 @@
     }
     .qty span{ font-weight:900; min-width:24px; text-align:center; display:inline-block; }
 
-    /* ✅ Red X Remove */
     .remove-x{
       position:absolute;
       top:10px;
@@ -294,6 +296,70 @@
     </div>
   </div>
 
+  <!-- EDIT PRODUCT MODAL -->
+  <div id="editModal" class="modal-backdrop hidden" onclick="if(event.target.id==='editModal'){closeEditModal()}">
+    <div class="modal" style="width:min(720px,100%);" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2>✏️ Edit Product</h2>
+        <button class="btn btn-dark" style="width:auto;padding:0.5rem 0.75rem;border-radius:10px;" onclick="closeEditModal()">✕</button>
+      </div>
+      <p class="muted">Update product info. Image is optional (leave empty to keep current image).</p>
+
+      <input type="hidden" id="editId">
+
+      <div class="row" style="margin-top:0.75rem;">
+        <div>
+          <label>Product Name</label>
+          <input id="editName" placeholder="Product name">
+        </div>
+        <div>
+          <label>Price (ETB)</label>
+          <input id="editPrice" type="number" step="0.01" placeholder="1500">
+        </div>
+      </div>
+
+      <div style="margin-top:0.75rem;">
+        <label>Description</label>
+        <textarea id="editDescription" rows="3" placeholder="Description..."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:0.75rem;">
+        <div>
+          <label>Category</label>
+          <select id="editCategory">
+            <option value="cultural">Cultural</option>
+            <option value="tshirt">T-Shirt</option>
+            <option value="dress">Dress</option>
+          </select>
+        </div>
+        <div>
+          <label>Gender</label>
+          <select id="editGender">
+            <option value="men">Men</option>
+            <option value="women">Women</option>
+            <option value="kids">Kids</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:0.75rem;">
+        <label>Change Image (optional)</label>
+        <input id="editImage" type="file" accept="image/*">
+        <div style="margin-top:0.6rem;">
+          <div style="font-weight:900;margin-bottom:0.3rem;">Preview</div>
+          <img id="editPreview" style="max-width:100%;max-height:260px;border-radius:12px;display:none;" />
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:1rem;">
+        <button class="btn-primary" onclick="saveEditProduct()">Save Changes</button>
+        <button class="btn-ghost" onclick="closeEditModal()">Cancel</button>
+      </div>
+
+      <p id="editMsg" style="margin-top:0.75rem;color:#e74c3c;font-weight:900;"></p>
+    </div>
+  </div>
+
   <!-- AUTH MODAL -->
   <div id="authModal" class="modal-backdrop hidden">
     <div class="modal">
@@ -357,7 +423,6 @@
         <span id="cartSubtotal">0 ETB</span>
       </div>
 
-      <!-- ✅ Buttons: Continue Shopping + Checkout -->
       <button class="btn btn-dark" style="width:100%;margin-top:1rem;" onclick="continueShopping()">Continue Shopping</button>
       <button class="btn-primary" style="width:100%;margin-top:0.6rem;" onclick="openCheckout()">Checkout</button>
       <button class="btn btn-dark" style="width:100%;margin-top:0.6rem;" onclick="clearCart()">Clear Cart</button>
@@ -459,17 +524,11 @@
   </div>
 
   <script>
-    // =======================
-    // CONFIG
-    // =======================
     const API_BASE =
       (location.hostname === "localhost" || location.hostname === "127.0.0.1")
         ? "http://localhost:3000"
         : "https://fashion-2tif.onrender.com";
 
-    // =======================
-    // STATE
-    // =======================
     let products = [];
     let currentFilter = "all";
     let cart = JSON.parse(localStorage.getItem("FASHION_CART") || "[]");
@@ -482,9 +541,6 @@
     const setToken = (t) => localStorage.setItem(AUTH_TOKEN_KEY, t);
     const clearToken = () => localStorage.removeItem(AUTH_TOKEN_KEY);
 
-    // =======================
-    // HELPERS
-    // =======================
     function escapeHtml(str){
       return String(str ?? "")
         .replaceAll("&","&amp;")
@@ -522,9 +578,6 @@
       return cart.reduce((s, it) => s + (Number(it.price)||0) * (Number(it.qty)||1), 0);
     }
 
-    // =======================
-    // NAV
-    // =======================
     function showShop(){
       document.getElementById("ordersSection").classList.add("hidden");
       document.getElementById("adminSection").classList.add("hidden");
@@ -556,9 +609,6 @@
       await loadMyOrders();
     }
 
-    // =======================
-    // PRODUCTS
-    // =======================
     async function loadProducts(){
       const loading = document.getElementById("loadingProducts");
       try {
@@ -608,9 +658,6 @@
       `).join("");
     }
 
-    // =======================
-    // CART
-    // =======================
     function addToCart(productId){
       const p = products.find(x => String(x.id) === String(productId));
       if(!p) return alert("Product not found");
@@ -684,7 +731,6 @@
             </div>
           </div>
 
-          <!-- ✅ Red X remove -->
           <div class="remove-x" title="Remove" onclick="removeFromCart('${String(it.productId).replaceAll("'","")}')">✕</div>
         </div>
       `).join("");
@@ -692,9 +738,6 @@
       document.getElementById("cartSubtotal").textContent = `${formatMoney(cartSubtotal())} ETB`;
     }
 
-    // =======================
-    // CHECKOUT
-    // =======================
     function openCheckout(){
       if(cart.length === 0) return alert("Cart is empty");
       if(!getToken()){
@@ -739,13 +782,12 @@
       if(!address) return msgEl.textContent = "Address is required";
 
       const fd = new FormData();
-
-      // ✅ FIX: DO NOT SEND IMAGE IN ITEMS (prevents Multer "Field value too long")
       fd.append("items", JSON.stringify(cart.map(it => ({
         productId: it.productId,
         name: it.name,
         price: it.price,
-        qty: it.qty
+        qty: it.qty,
+        image: it.image || ""
       }))));
 
       fd.append("fullName", fullName);
@@ -785,9 +827,6 @@
       }
     }
 
-    // =======================
-    // AUTH
-    // =======================
     function openAuth(){
       document.getElementById("authModal").classList.remove("hidden");
       switchToLogin();
@@ -878,9 +917,6 @@
       }
     }
 
-    // =======================
-    // MY ORDERS
-    // =======================
     async function loadMyOrders(){
       const box = document.getElementById("ordersList");
       box.innerHTML = `<div style="padding:1rem;color:#636e72;border:1px solid #eee;border-radius:14px;">Loading...</div>`;
@@ -935,9 +971,6 @@
       }
     }
 
-    // =======================
-    // ADMIN (same)
-    // =======================
     function setAdminKey() {
       const k = prompt("Enter ADMIN_API_KEY:");
       if (!k) return;
@@ -993,12 +1026,105 @@
             <p><b>Category:</b> ${escapeHtml(p.category || '')} | <b>Gender:</b> ${escapeHtml(p.gender || '')}</p>
             <p><b>Price:</b> ${formatMoney(p.price)} ETB</p>
           </div>
-          <div>
+          <div class="product-actions">
+            <button class="btn-ghost" onclick="openEditProduct('${String(p.id).replaceAll("'","")}')">Edit</button>
             <button class="btn-danger" onclick="deleteProduct('${String(p.id).replaceAll("'","")}')">Delete</button>
           </div>
         </div>
       `).join("");
     }
+
+    // EDIT MODAL
+    function openEditProduct(id){
+      const p = products.find(x => String(x.id) === String(id));
+      if(!p) return alert("Product not found");
+
+      document.getElementById("editMsg").textContent = "";
+      document.getElementById("editId").value = p.id;
+      document.getElementById("editName").value = p.name || "";
+      document.getElementById("editPrice").value = Number(p.price) || 0;
+      document.getElementById("editDescription").value = p.description || "";
+      document.getElementById("editCategory").value = p.category || "cultural";
+      document.getElementById("editGender").value = p.gender || "men";
+
+      const prev = document.getElementById("editPreview");
+      if(p.image){
+        prev.src = p.image;
+        prev.style.display = "block";
+      } else {
+        prev.style.display = "none";
+      }
+
+      document.getElementById("editImage").value = "";
+      document.getElementById("editModal").classList.remove("hidden");
+    }
+
+    function closeEditModal(){
+      document.getElementById("editModal").classList.add("hidden");
+    }
+
+    // ✅ FIXED: ALWAYS FormData for edit
+    async function saveEditProduct(){
+      const adminKey = getAdminKey();
+      if(!adminKey) return alert("Admin key not set. Click 'Set Admin Key' first.");
+
+      const id = document.getElementById("editId").value;
+      const name = document.getElementById("editName").value.trim();
+      const price = document.getElementById("editPrice").value;
+      const description = document.getElementById("editDescription").value.trim();
+      const category = document.getElementById("editCategory").value;
+      const gender = document.getElementById("editGender").value;
+      const file = document.getElementById("editImage").files[0];
+
+      const msg = document.getElementById("editMsg");
+      msg.textContent = "";
+
+      if(!name) return msg.textContent = "Name is required";
+      if(price === "" || price === null || price === undefined) return msg.textContent = "Price is required";
+      if(file && file.size > 2 * 1024 * 1024) return msg.textContent = "Image too large (max 2MB)";
+
+      const fd = new FormData();
+      fd.append("name", name);
+      fd.append("price", price);
+      fd.append("description", description);
+      fd.append("category", category);
+      fd.append("gender", gender);
+      if(file) fd.append("image", file);
+
+      try{
+        const res = await fetch(API_BASE + "/api/products/" + encodeURIComponent(id), {
+          method: "PUT",
+          headers: { "x-admin-key": adminKey },
+          body: fd
+        });
+
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok){
+          msg.textContent = `Update failed (${res.status}): ${json?.error || json?.details || text}`;
+          return;
+        }
+
+        alert("✅ Updated!");
+        closeEditModal();
+        await loadProducts();
+      }catch(e){
+        msg.textContent = e.message;
+      }
+    }
+
+    document.addEventListener("change", (e) => {
+      if(e.target && e.target.id === "editImage"){
+        const file = e.target.files && e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const prev = document.getElementById("editPreview");
+          prev.src = ev.target.result;
+          prev.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
     async function deleteProduct(id){
       if (!confirm("Delete this product?")) return;
@@ -1069,9 +1195,6 @@
       }
     }
 
-    // =======================
-    // DOM READY
-    // =======================
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("imageInput").addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
@@ -1098,4 +1221,3 @@
   </script>
 </body>
 </html>
-  
