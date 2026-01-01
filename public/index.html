@@ -36,11 +36,6 @@
     .container{max-width:1320px;margin:0 auto;padding:0 18px}
     .hidden{display:none!important}
 
-    /* make selects safe on mobile */
-    .panel, .admin-box, .modal, .drawer{ overflow: visible; }
-    .row, .actions, .admin-box{ position: relative; z-index: 1; }
-    select:focus{ position: relative; z-index: 9999; }
-
     /* Header */
     header{
       position:sticky;top:0;z-index:1000;
@@ -54,16 +49,14 @@
     }
     .brand{
       display:flex;align-items:center;gap:10px;font-weight:1000;
-      letter-spacing:.3px; cursor:pointer;
-      user-select:none;
+      letter-spacing:.3px; cursor:pointer; user-select:none;
     }
     .brand-badge{
       width:40px;height:40px;border-radius:12px;
       background:linear-gradient(135deg,var(--accent),var(--accent2));
       display:flex;align-items:center;justify-content:center;
       box-shadow:0 12px 30px rgba(90,167,255,.25);
-      font-size:18px;
-      flex:0 0 auto;
+      font-size:18px; flex:0 0 auto;
     }
     .brand-title{font-size:1.1rem;line-height:1}
     .brand-sub{font-size:.8rem;color:var(--muted);font-weight:800}
@@ -298,17 +291,27 @@
       display:flex;align-items:center;justify-content:center;
       overflow:hidden;
       position:relative;
+
+      /* ✅ mobile “black image” fixes */
+      backface-visibility:hidden;
+      -webkit-backface-visibility:hidden;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
     }
-    /* ✅ MOBILE IMAGE FIXES */
     .img img{
       width:100%;
       height:100%;
       object-fit:cover;
       display:block;
       background:rgba(255,255,255,.04);
-      -webkit-transform: translateZ(0);
+
+      /* iOS/Safari */
+      backface-visibility:hidden;
+      -webkit-backface-visibility:hidden;
       transform: translateZ(0);
+      -webkit-transform: translateZ(0);
     }
+
     .p-body{padding:12px}
     .p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
     .meta{color:var(--muted);font-weight:1000;font-size:.8rem}
@@ -529,7 +532,7 @@
     }
     .toast .tBody{flex:1}
     .toast .tTitle{font-weight:1000}
-    .toast .tText{color:var(--muted);font-weight:800;margin-top:4px;line-height:1.35}
+    .toast .tText{color:var(--muted);font-weight:800;margin-top:4px;line-height:1.35;white-space:pre-wrap}
     .toast .tClose{
       width:36px;height:36px;border-radius:12px;
       border:1px solid rgba(255,255,255,.12);
@@ -766,6 +769,7 @@
             <button class="btn btn-ghost" onclick="setAdminKey()">Set Admin Key</button>
             <button class="btn btn-ghost" onclick="testAdminKey()">Test Admin</button>
             <button class="btn btn-ghost" onclick="logoutAdmin()">Logout Admin</button>
+            <button class="btn btn-ghost" onclick="testEmail()">Test Email</button>
             <button class="btn btn-primary" onclick="loadAdminOrders()">Refresh Orders</button>
           </div>
         </div>
@@ -774,7 +778,7 @@
           <!-- Add Product -->
           <div class="admin-box">
             <h3>➕ Add Product</h3>
-            <div class="note">Image required (max 2MB). After upload, the product will appear immediately in Shop.</div>
+            <div class="note">Image required (max 2MB). After upload, product appears in Shop.</div>
 
             <form id="productForm" class="stack">
               <div class="drop" onclick="$('imageInput').click()">
@@ -906,7 +910,7 @@
       </div>
 
       <div class="row">
-        <input id="ckEmail" placeholder="Email (optional but needed for updates)" />
+        <input id="ckEmail" placeholder="Email (required for updates)" />
         <input id="ckCity" placeholder="City" />
       </div>
 
@@ -956,7 +960,7 @@
         <button class="x" onclick="closeMail()">✕</button>
       </div>
 
-      <input id="mailOrderId" class="hidden" />
+      <input id="mailDbId" class="hidden" />
       <input id="mailSubject" placeholder="Subject" />
       <textarea id="mailMessage" rows="7" placeholder="Write message..."></textarea>
 
@@ -1077,6 +1081,36 @@
       if(timeout) setTimeout(()=>{ if(t.isConnected) t.remove(); }, timeout);
     }
 
+    // ---------- TOKEN (FIX INVALID TOKEN) ----------
+    function getToken(){
+      let t = localStorage.getItem(AUTH_TOKEN_KEY) || "";
+      t = String(t).trim();
+      if(!t) return "";
+      if((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) t = t.slice(1,-1).trim();
+      if(t.toLowerCase().startsWith("bearer ")) t = t.slice(7).trim();
+      return t;
+    }
+    function setToken(t){ localStorage.setItem(AUTH_TOKEN_KEY, String(t||"").trim()); }
+    function clearToken(){ localStorage.removeItem(AUTH_TOKEN_KEY); }
+
+    async function apiFetch(url, options = {}){
+      const token = getToken();
+      const headers = new Headers(options.headers || {});
+      if(token) headers.set("Authorization","Bearer " + token);
+
+      const res = await fetch(url, { ...options, headers });
+
+      if(res.status === 401){
+        const body = await res.text().catch(()=> "");
+        clearToken();
+        updateAuthUI();
+        toast("Session expired","Please login again to continue.","info");
+        openAuth();
+        throw new Error(body || "Unauthorized");
+      }
+      return res;
+    }
+
     // ---------- MOBILE MENU ----------
     function toggleMobileMenu(open){
       const wrap = $("mMenuWrap");
@@ -1091,15 +1125,11 @@
       const authed = !!getToken();
       const label = authed ? "Account" : "Login";
       const hint  = authed ? "Manage your account and view orders." : "Login to checkout & track orders.";
-      if($("mAuthLabel")) $("mAuthLabel").textContent = label;
-      if($("mAuthHint")) $("mAuthHint").textContent = hint;
+      $("mAuthLabel").textContent = label;
+      $("mAuthHint").textContent = hint;
     }
 
     // ---------- AUTH ----------
-    const getToken = () => localStorage.getItem(AUTH_TOKEN_KEY) || "";
-    const setToken = (t) => localStorage.setItem(AUTH_TOKEN_KEY, t);
-    const clearToken = () => localStorage.removeItem(AUTH_TOKEN_KEY);
-
     function updateAuthUI(){
       const authed = !!getToken();
       $("authLabel").textContent = authed ? "Account" : "Login";
@@ -1151,6 +1181,7 @@
         });
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Register failed");
+
         setToken(json.token);
         updateAuthUI();
         closeAuth();
@@ -1176,6 +1207,7 @@
         });
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Login failed");
+
         setToken(json.token);
         updateAuthUI();
         closeAuth();
@@ -1247,7 +1279,18 @@
       try{
         const res = await fetch(API_BASE + "/api/products", { cache:"no-store" });
         const data = await res.json();
-        products = Array.isArray(data) ? data : [];
+
+        // ✅ backend returns { ok:true, products:[...] }
+        const raw = Array.isArray(data) ? data : (data.products || []);
+
+        // ✅ normalize Mongo _id => id
+        products = raw.map(p => ({
+          ...p,
+          id: p.id || p._id,
+          category: String(p.category || "").trim(),
+          gender: String(p.gender || "").trim()
+        }));
+
         $("statProducts").textContent = String(products.length);
         $("shopHint").textContent = "Browse by category, search, or filter by gender.";
         renderProducts();
@@ -1258,14 +1301,15 @@
       }
     }
 
-    // ✅ mobile safe image html: decoding + lazy + referrerpolicy
+    // ✅ safe image tag (fix mobile black image + CORS)
     function imgTag(url, alt){
-      const safe = url || "";
+      const safe = String(url || "").trim();
       if(!safe) return "";
       return `<img src="${safe}"
         alt="${escapeHtml(alt||"")}"
         loading="lazy"
         decoding="async"
+        crossorigin="anonymous"
         referrerpolicy="no-referrer"
         onerror="this.style.display='none'">`;
     }
@@ -1277,23 +1321,17 @@
 
       let list = [...products];
 
-      if(currentCategory !== "all"){
-        list = list.filter(p => String(p.category) === String(currentCategory));
-      }
-      if(g !== "all"){
-        list = list.filter(p => String(p.gender) === String(g));
-      }
-      if(q){
-        list = list.filter(p => (p.name||"").toLowerCase().includes(q));
-      }
+      if(currentCategory !== "all") list = list.filter(p => String(p.category) === String(currentCategory));
+      if(g !== "all") list = list.filter(p => String(p.gender) === String(g));
+      if(q) list = list.filter(p => (p.name||"").toLowerCase().includes(q));
+
       if(sort === "priceLow") list.sort((a,b)=>(Number(a.price)||0)-(Number(b.price)||0));
       if(sort === "priceHigh") list.sort((a,b)=>(Number(b.price)||0)-(Number(a.price)||0));
       if(sort === "new") list.sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
 
-      const grid = $("grid");
       $("shopEmpty").classList.toggle("hidden", list.length > 0);
 
-      grid.innerHTML = list.map(p => `
+      $("grid").innerHTML = list.map(p => `
         <div class="card">
           <div class="img">${imgTag(p.image, p.name)}</div>
           <div class="p-body">
@@ -1328,7 +1366,7 @@
     function updateCartCount(){
       const count = cart.reduce((s,it)=> s + (Number(it.qty)||1), 0);
       $("cartCount").textContent = String(count);
-      if($("cartCountMobile")) $("cartCountMobile").textContent = String(count);
+      $("cartCountMobile").textContent = String(count);
     }
 
     function subtotal(){
@@ -1338,9 +1376,11 @@
     function addToCart(productId){
       const p = products.find(x => String(x.id) === String(productId));
       if(!p) return toast("Product not found","Please refresh the page.","error");
+
       const ex = cart.find(x => String(x.productId) === String(productId));
       if(ex) ex.qty = (Number(ex.qty)||1) + 1;
       else cart.push({ productId: p.id, name:p.name, price:Number(p.price)||0, qty:1, image:p.image||"" });
+
       saveCart();
       renderCart();
       toast("Added to cart", p.name || "Item added.");
@@ -1433,10 +1473,10 @@
 
       if(!fullName) return $("checkoutMsg").textContent = "Full name is required.";
       if(!phone) return $("checkoutMsg").textContent = "Phone is required.";
+      if(!email) return $("checkoutMsg").textContent = "Email is required (for updates).";
       if(!address) return $("checkoutMsg").textContent = "Address is required.";
 
       const fd = new FormData();
-      // IMPORTANT: send only URL images (not base64)
       fd.append("items", JSON.stringify(cart.map(it => ({
         productId: it.productId,
         name: it.name,
@@ -1454,13 +1494,14 @@
       fd.append("notes", notes);
       fd.append("paymentMethod", paymentMethod);
       fd.append("telebirrRef", telebirrRef);
-      if(proof) fd.append("paymentProof", proof);
+
+      // ✅ IMPORTANT: backend expects upload.single("proof")
+      if(proof) fd.append("proof", proof);
 
       try{
         showLoading("Placing order...","Please wait while we confirm your order.");
-        const res = await fetch(API_BASE + "/api/orders",{
+        const res = await apiFetch(API_BASE + "/api/orders",{
           method:"POST",
-          headers:{ "Authorization":"Bearer " + getToken() },
           body: fd
         });
         const { text, json } = await readJsonSafe(res);
@@ -1487,13 +1528,11 @@
       const box = $("ordersList");
       box.innerHTML = `<div class="empty">Loading...</div>`;
       try{
-        const res = await fetch(API_BASE + "/api/orders/my",{
-          headers:{ "Authorization":"Bearer " + getToken() }
-        });
+        const res = await apiFetch(API_BASE + "/api/orders/my");
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to load orders");
 
-        const orders = Array.isArray(json) ? json : [];
+        const orders = Array.isArray(json) ? json : (json.orders || []);
         if(orders.length === 0){
           box.innerHTML = `<div class="empty">No orders yet.</div>`;
           return;
@@ -1563,6 +1602,22 @@
       }
     }
 
+    async function testEmail(){
+      const k = getAdminKey();
+      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
+      try{
+        showLoading("Testing email...","Sending a test email from hosted backend.");
+        const res = await fetch(API_BASE + "/api/admin/test-email", { headers:{ "x-admin-key": k } });
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Test email failed");
+        toast("Email OK","Test email sent. Check your inbox.");
+      }catch(e){
+        toast("Email test failed", e.message, "error");
+      }finally{
+        hideLoading();
+      }
+    }
+
     // ---------- ADMIN PRODUCTS ----------
     function renderAdminProducts(){
       const list = $("productList");
@@ -1585,7 +1640,6 @@
       `).join("");
     }
 
-    // upload preview
     $("imageInput").addEventListener("change", (e)=>{
       const f = e.target.files && e.target.files[0];
       if(!f) return;
@@ -1597,7 +1651,6 @@
       r.readAsDataURL(f);
     });
 
-    // add product submit
     $("productForm").addEventListener("submit", async (e)=>{
       e.preventDefault();
       const adminKey = getAdminKey();
@@ -1757,7 +1810,8 @@
         const res = await fetch(API_BASE + "/api/admin/orders",{ headers:{ "x-admin-key": k } });
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to load admin orders");
-        const orders = Array.isArray(json) ? json : [];
+
+        const orders = Array.isArray(json) ? json : (json.orders || []);
 
         if(orders.length === 0){
           box.innerHTML = `<div class="empty">No orders yet.</div>`;
@@ -1765,6 +1819,8 @@
         }
 
         box.innerHTML = orders.map(o=>{
+          const dbKey = String(o._id || o.id || o.orderId);
+          const orderKey = String(o.orderId || "");
           const items = (o.items||[]).map(i=>{
             const lineTotal = (Number(i.price)||0) * (Number(i.qty)||1);
             return `
@@ -1802,14 +1858,14 @@
               <div class="hr"></div>
 
               <div class="row">
-                <select id="st_${o.id}">
+                <select id="st_${dbKey}">
                   <option value="placed" ${o.status==="placed"?"selected":""}>placed</option>
                   <option value="processing" ${o.status==="processing"?"selected":""}>processing</option>
                   <option value="delivered" ${o.status==="delivered"?"selected":""}>delivered</option>
                   <option value="cancelled" ${o.status==="cancelled"?"selected":""}>cancelled</option>
                 </select>
 
-                <select id="pay_${o.id}">
+                <select id="pay_${dbKey}">
                   <option value="pending" ${(o.payment?.status||"pending")==="pending"?"selected":""}>pending</option>
                   <option value="paid" ${(o.payment?.status||"pending")==="paid"?"selected":""}>paid</option>
                   <option value="failed" ${(o.payment?.status||"pending")==="failed"?"selected":""}>failed</option>
@@ -1817,11 +1873,11 @@
               </div>
 
               <div class="actions" style="margin-top:10px">
-                <button class="btn ok sm" onclick="adminUpdateOrder('${o.id}')">Save Update</button>
-                <button class="btn warnBtn sm" onclick="openMail('${o.id}','${escapeHtml(o.orderId||"")}','${escapeHtml(o.status||"placed")}','${escapeHtml(o.payment?.status||"pending")}')">Email Customer</button>
+                <button class="btn ok sm" onclick="adminUpdateOrder('${orderKey}','${dbKey}')">Save Update</button>
+                <button class="btn warnBtn sm" onclick="openMail('${orderKey}','${escapeHtml(o.orderId||"")}','${escapeHtml(o.status||"placed")}','${escapeHtml(o.payment?.status||"pending")}')">Email Customer</button>
               </div>
 
-              <div class="note" id="msg_${o.id}"></div>
+              <div class="note" id="msg_${dbKey}"></div>
             </div>
           `;
         }).join("");
@@ -1830,18 +1886,18 @@
       }
     }
 
-    async function adminUpdateOrder(dbId){
+    async function adminUpdateOrder(orderId, dbKey){
       const k = getAdminKey();
       if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
 
-      const status = $("st_" + dbId).value;
-      const paymentStatus = $("pay_" + dbId).value;
-      const msg = $("msg_" + dbId);
+      const status = $("st_" + dbKey).value;
+      const paymentStatus = $("pay_" + dbKey).value;
+      const msg = $("msg_" + dbKey);
       msg.textContent = "Saving...";
 
       try{
         showLoading("Updating order...","Please wait.");
-        const res = await fetch(API_BASE + "/api/admin/orders/" + encodeURIComponent(dbId),{
+        const res = await fetch(API_BASE + "/api/admin/orders/" + encodeURIComponent(orderId),{
           method:"PUT",
           headers:{
             "Content-Type":"application/json",
@@ -1862,16 +1918,16 @@
       }
     }
 
-    function openMail(dbId, orderId, status, payStatus){
-      $("mailOrderId").value = dbId;
+    function openMail(orderId, orderIdText, status, payStatus){
+      $("mailDbId").value = orderId; // ✅ store orderId (backend route expects orderId)
       $("mailMsg").textContent = "";
-      $("mailSubject").value = `Sena Fashion — Order Update (${orderId})`;
+      $("mailSubject").value = `Sena Fashion — Order Update (${orderIdText})`;
       $("mailMessage").value =
 `Hello,
 
 We’re reaching out with an update on your Sena Fashion order.
 
-Order ID: ${orderId}
+Order ID: ${orderIdText}
 Status: ${status}
 Payment Status: ${payStatus}
 
@@ -1888,7 +1944,7 @@ Sena Fashion Support Team`;
       const k = getAdminKey();
       if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
 
-      const dbId = $("mailOrderId").value;
+      const orderId = $("mailDbId").value; // ✅ orderId
       const subject = $("mailSubject").value.trim();
       const message = $("mailMessage").value.trim();
 
@@ -1896,7 +1952,7 @@ Sena Fashion Support Team`;
 
       try{
         showLoading("Sending email...","Please wait.");
-        const res = await fetch(API_BASE + "/api/admin/orders/" + encodeURIComponent(dbId) + "/email",{
+        const res = await fetch(API_BASE + "/api/admin/orders/" + encodeURIComponent(orderId) + "/email",{
           method:"POST",
           headers:{
             "Content-Type":"application/json",
@@ -1919,7 +1975,7 @@ Sena Fashion Support Team`;
     // ---------- INIT ----------
     document.addEventListener("DOMContentLoaded", ()=>{
       $("yy").textContent = new Date().getFullYear();
-      if($("yy2")) $("yy2").textContent = new Date().getFullYear();
+      $("yy2").textContent = new Date().getFullYear();
       updateCartCount();
       updateAuthUI();
       loadProducts();
