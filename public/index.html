@@ -27,6 +27,11 @@
     .container{max-width:1320px;margin:0 auto;padding:0 18px}
     .hidden{display:none!important}
 
+    /* ✅ Fix: dropdown/select menus being clipped/overlapped */
+    .panel, .admin-box, .modal, .drawer{ overflow: visible; }
+    .row, .actions, .admin-box{ position: relative; z-index: 1; }
+    select:focus{ position: relative; z-index: 9999; }
+
     /* Header */
     header{
       position:sticky;top:0;z-index:1000;
@@ -40,7 +45,7 @@
     }
     .brand{
       display:flex;align-items:center;gap:10px;font-weight:1000;
-      letter-spacing:.3px;
+      letter-spacing:.3px; cursor:pointer;
     }
     .brand-badge{
       width:40px;height:40px;border-radius:12px;
@@ -48,6 +53,7 @@
       display:flex;align-items:center;justify-content:center;
       box-shadow:0 12px 30px rgba(90,167,255,.25);
       font-size:18px;
+      flex:0 0 auto;
     }
     .brand-title{font-size:1.1rem;line-height:1}
     .brand-sub{font-size:.8rem;color:var(--muted);font-weight:700}
@@ -78,14 +84,88 @@
       padding:0 7px;
     }
 
+    /* ---------------- MOBILE NAV ---------------- */
+    .nav-mobile{display:none;gap:10px;align-items:center}
+    .nav-desktop{display:flex}
+
+    .iconBtn{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      padding:.55rem .75rem;
+      border-radius:14px;
+      font-weight:1000;
+      cursor:pointer;
+      transition:.2s;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .iconBtn:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
+
+    .miniCount{
+      background:rgba(255,69,58,.16);
+      border:1px solid rgba(255,69,58,.3);
+      color:#ffb3ad;
+      min-width:22px;height:22px;border-radius:999px;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:.8rem;font-weight:1000;
+      padding:0 7px;
+    }
+
+    /* Mobile menu drawer */
+    .mMenuWrap{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:2700;
+      display:flex;
+      justify-content:flex-end;
+    }
+    .mMenu{
+      width:min(420px, 100%);
+      height:100%;
+      background:rgba(17,27,40,.98);
+      border-left:1px solid rgba(255,255,255,.10);
+      padding:14px;
+      overflow:auto;
+    }
+    .mHead{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+    }
+    .mBrand{display:flex;gap:10px;align-items:center}
+    .mAuthBox{
+      margin-top:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      border-radius:18px;
+      padding:12px;
+    }
+    .mAuthRow{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:8px}
+    .mLinks{margin-top:14px;display:grid;gap:10px}
+    .mLink{
+      width:100%;
+      text-align:left;
+      padding:.9rem .9rem;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      font-weight:1000;
+      cursor:pointer;
+      transition:.15s;
+    }
+    .mLink:hover{background:rgba(255,255,255,.06);transform:translateY(-1px)}
+    .mFooter{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:14px}
+
+    @media(max-width:820px){
+      .nav-desktop{display:none}
+      .nav-mobile{display:flex}
+    }
+
     /* Hero */
-    .hero{
-      padding:34px 0 18px;
-    }
-    .hero-grid{
-      display:grid;grid-template-columns:1.2fr .8fr;gap:16px;
-      align-items:stretch;
-    }
+    .hero{padding:34px 0 18px}
+    .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:stretch}
     .hero-card{
       border:1px solid var(--line);
       background:radial-gradient(1200px 600px at 20% 10%, rgba(90,167,255,.25), transparent 55%),
@@ -97,10 +177,7 @@
       overflow:hidden;
       position:relative;
     }
-    .hero-card h1{
-      font-size:2rem;line-height:1.12;margin-bottom:8px;
-      letter-spacing:.2px;
-    }
+    .hero-card h1{font-size:2rem;line-height:1.12;margin-bottom:8px;letter-spacing:.2px}
     .hero-card p{color:var(--muted);max-width:56ch}
     .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
     .btn{
@@ -108,6 +185,7 @@
       padding:.8rem 1rem;cursor:pointer;
       transition:.2s;
       display:inline-flex;align-items:center;gap:10px;
+      justify-content:center;
     }
     .btn-primary{
       background:linear-gradient(135deg,var(--accent),var(--accent2));
@@ -156,9 +234,7 @@
       display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
       margin-bottom:10px;
     }
-    .tabs{
-      display:flex;gap:8px;flex-wrap:wrap;
-    }
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
     .tab{
       padding:.55rem .85rem;border-radius:999px;
       border:1px solid var(--line);
@@ -173,9 +249,7 @@
       color:#fff;
       border-color:rgba(90,167,255,.35);
     }
-    .controls{
-      display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-    }
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     input, select, textarea{
       width:100%;
       padding:.75rem .85rem;
@@ -187,9 +261,7 @@
       font-weight:900;
     }
     input::placeholder, textarea::placeholder{color:rgba(167,179,199,.7)}
-    .control{
-      width: min(260px, 100%);
-    }
+    .control{width:min(260px,100%)}
 
     /* Products */
     .grid{
@@ -255,9 +327,7 @@
     .sub{color:var(--muted);font-weight:800}
 
     /* Admin section */
-    .two{
-      display:grid;grid-template-columns: 1fr 1fr;gap:14px;
-    }
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     @media(max-width:980px){.hero-grid{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
     .admin-box{
       border:1px solid rgba(255,255,255,.10);
@@ -288,9 +358,7 @@
       display:none;
     }
 
-    .list{
-      display:grid;gap:10px;margin-top:10px;
-    }
+    .list{display:grid;gap:10px;margin-top:10px}
     .item{
       display:flex;gap:12px;align-items:center;
       border:1px solid rgba(255,255,255,.10);
@@ -361,9 +429,7 @@
       position:relative;
     }
     .cartLine .thumb{width:62px;height:62px}
-    .qty{
-      display:flex;gap:8px;align-items:center;margin-top:6px;
-    }
+    .qty{display:flex;gap:8px;align-items:center;margin-top:6px}
     .qty button{
       width:34px;height:34px;border-radius:12px;
       border:1px solid rgba(255,255,255,.12);
@@ -379,6 +445,32 @@
       color:#fff;font-weight:1000;cursor:pointer;
     }
 
+    /* ✅ Order item rows (Admin + My Orders) */
+    .orderItems{display:grid;gap:10px;margin-top:10px}
+    .orderItem{
+      display:flex;gap:12px;align-items:center;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      border-radius:16px;
+      padding:10px;
+    }
+    .orderThumb{
+      width:64px;height:64px;border-radius:14px;overflow:hidden;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      flex:0 0 auto;
+    }
+    .orderThumb img{width:100%;height:100%;object-fit:cover}
+    .orderInfo{flex:1;min-width:0}
+    .orderInfo b{font-weight:1000}
+    .orderPrice{
+      font-weight:1000;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      padding:.35rem .6rem;border-radius:999px;
+      white-space:nowrap;
+    }
+
     footer{
       border-top:1px solid rgba(255,255,255,.10);
       padding:18px 0 30px;
@@ -389,6 +481,7 @@
 </head>
 
 <body>
+  <!-- ✅ FULL UPDATED HEADER (Desktop + Mobile) -->
   <header>
     <div class="container">
       <div class="nav">
@@ -400,7 +493,8 @@
           </div>
         </a>
 
-        <div class="nav-right">
+        <!-- Desktop pills -->
+        <div class="nav-right nav-desktop">
           <div class="pill" onclick="showShop()">🛍️ Shop</div>
           <div class="pill" onclick="openOrders()">📦 My Orders</div>
           <div class="pill" onclick="openAdmin()">🛠️ Admin</div>
@@ -414,9 +508,55 @@
             🛒 Cart <span class="count" id="cartCount">0</span>
           </div>
         </div>
+
+        <!-- Mobile buttons -->
+        <div class="nav-mobile">
+          <button class="iconBtn" onclick="openCart()" aria-label="Open cart">
+            🛒 <span class="miniCount" id="cartCountMobile">0</span>
+          </button>
+          <button class="iconBtn" onclick="toggleMobileMenu(true)" aria-label="Open menu">
+            ☰
+          </button>
+        </div>
       </div>
     </div>
   </header>
+
+  <!-- ✅ MOBILE MENU DRAWER -->
+  <div id="mMenuWrap" class="mMenuWrap hidden" onclick="if(event.target.id==='mMenuWrap'){toggleMobileMenu(false)}">
+    <div class="mMenu" onclick="event.stopPropagation()">
+      <div class="mHead">
+        <div class="mBrand">
+          <div class="brand-badge" style="width:38px;height:38px;border-radius:12px">SF</div>
+          <div>
+            <div style="font-weight:1000;line-height:1">Sena Fashion</div>
+            <div style="color:var(--muted);font-weight:800;font-size:.85rem">Modern • Cultural • Premium</div>
+          </div>
+        </div>
+        <button class="x" onclick="toggleMobileMenu(false)">✕</button>
+      </div>
+
+      <div class="mAuthBox">
+        <div class="badge">👤 Account</div>
+        <div class="mAuthRow">
+          <div style="font-weight:1000" id="mAuthLabel">Login</div>
+          <button class="btn btn-primary" style="padding:.65rem .85rem;border-radius:12px" onclick="mobileAccountAction()">Open</button>
+        </div>
+        <div class="note" id="mAuthHint">Login to checkout & track orders.</div>
+      </div>
+
+      <div class="mLinks">
+        <button class="mLink" onclick="toggleMobileMenu(false); showShop()">🛍️ Shop</button>
+        <button class="mLink" onclick="toggleMobileMenu(false); openOrders()">📦 My Orders</button>
+        <button class="mLink" onclick="toggleMobileMenu(false); openAdmin()">🛠️ Admin</button>
+        <button class="mLink" onclick="toggleMobileMenu(false); openCart()">🛒 Cart</button>
+      </div>
+
+      <div class="mFooter">
+        <div class="note">© <span id="yy2"></span> Sena Fashion</div>
+      </div>
+    </div>
+  </div>
 
   <!-- SHOP -->
   <section id="shopView">
@@ -810,6 +950,24 @@
       try { return { text, json: JSON.parse(text) }; } catch { return { text, json: null }; }
     }
 
+    // ---------- MOBILE MENU ----------
+    function toggleMobileMenu(open){
+      const wrap = $("mMenuWrap");
+      if(!wrap) return;
+      wrap.classList.toggle("hidden", !open);
+    }
+    function mobileAccountAction(){
+      toggleMobileMenu(false);
+      openAccount();
+    }
+    function updateMobileAuthUI(){
+      const authed = !!getToken();
+      const label = authed ? "Account" : "Login";
+      const hint  = authed ? "Manage your account and view orders." : "Login to checkout & track orders.";
+      if($("mAuthLabel")) $("mAuthLabel").textContent = label;
+      if($("mAuthHint")) $("mAuthHint").textContent = hint;
+    }
+
     // ---------- AUTH ----------
     const getToken = () => localStorage.getItem(AUTH_TOKEN_KEY) || "";
     const setToken = (t) => localStorage.setItem(AUTH_TOKEN_KEY, t);
@@ -819,6 +977,7 @@
       const authed = !!getToken();
       $("authLabel").textContent = authed ? "Account" : "Login";
       $("authPill").classList.toggle("authed", authed);
+      updateMobileAuthUI();
     }
 
     function openAccount(){
@@ -909,7 +1068,10 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       if(!getToken()){
-        $("ordersList").innerHTML = `<div class="empty">Please login to view orders. <a style="color:var(--accent);font-weight:1000;cursor:pointer" onclick="openAuth()">Login</a></div>`;
+        $("ordersList").innerHTML =
+          `<div class="empty">Please login to view orders.
+            <a style="color:var(--accent);font-weight:1000;cursor:pointer" onclick="openAuth()">Login</a>
+          </div>`;
         return;
       }
       loadMyOrders();
@@ -924,8 +1086,7 @@
     }
 
     function scrollToProducts(){
-      const a = $("productsAnchor");
-      a.scrollIntoView({ behavior:"smooth" });
+      $("productsAnchor").scrollIntoView({ behavior:"smooth" });
     }
 
     // ---------- SHOP FILTERS ----------
@@ -971,22 +1132,15 @@
 
       let list = [...products];
 
-      // category filter
       if(currentCategory !== "all"){
         list = list.filter(p => String(p.category) === String(currentCategory));
       }
-
-      // gender filter
       if(g !== "all"){
         list = list.filter(p => String(p.gender) === String(g));
       }
-
-      // search
       if(q){
         list = list.filter(p => (p.name||"").toLowerCase().includes(q));
       }
-
-      // sort
       if(sort === "priceLow") list.sort((a,b)=>(Number(a.price)||0)-(Number(b.price)||0));
       if(sort === "priceHigh") list.sort((a,b)=>(Number(b.price)||0)-(Number(a.price)||0));
       if(sort === "new") list.sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
@@ -1027,10 +1181,13 @@
       localStorage.setItem(CART_KEY, JSON.stringify(cart));
       updateCartCount();
     }
+
     function updateCartCount(){
       const count = cart.reduce((s,it)=> s + (Number(it.qty)||1), 0);
       $("cartCount").textContent = String(count);
+      if($("cartCountMobile")) $("cartCountMobile").textContent = String(count);
     }
+
     function subtotal(){
       return cart.reduce((s,it)=> s + (Number(it.price)||0)*(Number(it.qty)||1), 0);
     }
@@ -1170,7 +1327,7 @@
       }
     }
 
-    // ---------- MY ORDERS ----------
+    // ---------- MY ORDERS (✅ includes item images) ----------
     async function loadMyOrders(){
       const box = $("ordersList");
       box.innerHTML = `<div class="empty">Loading...</div>`;
@@ -1188,15 +1345,20 @@
         }
 
         box.innerHTML = orders.map(o => {
-          const items = (o.items||[]).map(i => `
-            <div class="stat-row" style="margin-top:10px">
-              <div>
-                <div style="font-weight:1000">${escapeHtml(i.name||"")}</div>
-                <div class="sub">Qty: ${Number(i.qty)||1} • ${money(i.price)} ETB</div>
+          const items = (o.items||[]).map(i=>{
+            const lineTotal = (Number(i.price)||0) * (Number(i.qty)||1);
+            const img = i.image || "";
+            return `
+              <div class="orderItem">
+                <div class="orderThumb">${img ? `<img src="${img}" onerror="this.style.display='none'">` : ``}</div>
+                <div class="orderInfo">
+                  <b>${escapeHtml(i.name||"")}</b>
+                  <div class="sub">Qty: ${Number(i.qty)||1} • ${money(i.price)} ETB</div>
+                </div>
+                <div class="orderPrice">${money(lineTotal)} ETB</div>
               </div>
-              <div class="badge">${money((Number(i.price)||0)*(Number(i.qty)||1))} ETB</div>
-            </div>
-          `).join("");
+            `;
+          }).join("");
 
           return `
             <div class="admin-box" style="margin-top:12px">
@@ -1208,7 +1370,7 @@
                 </div>
                 <div style="font-weight:1000;font-size:1.1rem">${money(o.total)} ETB</div>
               </div>
-              ${items}
+              <div class="orderItems">${items}</div>
             </div>
           `;
         }).join("");
@@ -1224,18 +1386,18 @@
       if(!k) return;
       localStorage.setItem(ADMIN_KEY_STORAGE, k.trim());
       alert("Admin key saved on this browser.");
+      loadAdminOrders();
     }
     function logoutAdmin(){
       localStorage.removeItem(ADMIN_KEY_STORAGE);
       alert("Admin key removed.");
+      loadAdminOrders();
     }
     async function testAdminKey(){
       const k = getAdminKey();
       if(!k) return alert("Admin key not set.");
       try{
-        const res = await fetch(API_BASE + "/api/admin/ping",{
-          headers:{ "x-admin-key": k }
-        });
+        const res = await fetch(API_BASE + "/api/admin/ping",{ headers:{ "x-admin-key": k } });
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Admin ping failed");
         alert("✅ Admin key OK!");
@@ -1247,9 +1409,6 @@
     // ---------- ADMIN PRODUCTS ----------
     function renderAdminProducts(){
       const list = $("productList");
-      if(!$("adminView") || $("adminView").classList.contains("hidden")) {
-        // still render list if admin is open; harmless either way
-      }
       if(products.length === 0){
         list.innerHTML = `<div class="empty">No products yet.</div>`;
         return;
@@ -1315,8 +1474,6 @@
         e.target.reset();
         $("imagePreview").style.display = "none";
 
-        // ✅ THE FIX YOU ASKED FOR:
-        // reload products then reset shop filters and show shop
         await loadProducts();
         resetShopFiltersToAll();
         showShop();
@@ -1416,7 +1573,7 @@
       }
     }
 
-    // ---------- ADMIN ORDERS ----------
+    // ---------- ADMIN ORDERS (✅ includes item images + polished) ----------
     async function loadAdminOrders(){
       const k = getAdminKey();
       const box = $("adminOrders");
@@ -1427,9 +1584,7 @@
       box.innerHTML = `<div class="empty">Loading orders...</div>`;
 
       try{
-        const res = await fetch(API_BASE + "/api/admin/orders",{
-          headers:{ "x-admin-key": k }
-        });
+        const res = await fetch(API_BASE + "/api/admin/orders",{ headers:{ "x-admin-key": k } });
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to load admin orders");
         const orders = Array.isArray(json) ? json : [];
@@ -1440,8 +1595,23 @@
         }
 
         box.innerHTML = orders.map(o=>{
-          const items = (o.items||[]).map(i=>`<div class="sub">• ${escapeHtml(i.name||"")} x${Number(i.qty)||1} — ${money(i.price)} ETB</div>`).join("");
+          const items = (o.items||[]).map(i=>{
+            const lineTotal = (Number(i.price)||0) * (Number(i.qty)||1);
+            const img = i.image || "";
+            return `
+              <div class="orderItem">
+                <div class="orderThumb">${img ? `<img src="${img}" onerror="this.style.display='none'">` : ``}</div>
+                <div class="orderInfo">
+                  <b>${escapeHtml(i.name||"")}</b>
+                  <div class="sub">Qty: ${Number(i.qty)||1} • ${money(i.price)} ETB</div>
+                </div>
+                <div class="orderPrice">${money(lineTotal)} ETB</div>
+              </div>
+            `;
+          }).join("");
+
           const custEmail = (o.customer?.email||"").trim();
+
           return `
             <div class="admin-box">
               <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -1457,7 +1627,8 @@
               <div class="hr"></div>
               <div class="sub"><b>Status:</b> ${escapeHtml(o.status||"placed")} • <b>Payment:</b> ${escapeHtml(o.payment?.method||"")} (${escapeHtml(o.payment?.status||"pending")})</div>
               <div class="sub">Placed: ${new Date(o.createdAt).toLocaleString()}</div>
-              <div style="margin-top:8px">${items}</div>
+
+              <div class="orderItems">${items}</div>
 
               <div class="hr"></div>
 
@@ -1511,29 +1682,34 @@
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Update failed");
         msg.textContent = "✅ Updated successfully.";
-        // refresh list (so you see the change reflected)
         await loadAdminOrders();
       }catch(e){
         msg.textContent = "❌ " + e.message;
       }
     }
 
-   function openMail(dbId, orderId, status, payStatus){
-  $("mailOrderId").value = dbId;
-  $("mailMsg").textContent = "";
+    function openMail(dbId, orderId, status, payStatus){
+      $("mailOrderId").value = dbId;
+      $("mailMsg").textContent = "";
 
-  $("mailSubject").value = `Update on your order ${orderId}`;
+      $("mailSubject").value = `Sena Fashion — Order Update (${orderId})`;
 
-  // ✅ ONLY a short note (backend will add the full order details)
-  $("mailMessage").value =
-`Your order update:
-• Status: ${status}
-• Payment: ${payStatus}
+      $("mailMessage").value =
+`Hello,
 
-Thank you for choosing Sena Fashion.`;
-  
-  $("mailModal").classList.remove("hidden");
-}
+We’re reaching out with an update on your Sena Fashion order.
+
+Order ID: ${orderId}
+Status: ${status}
+Payment Status: ${payStatus}
+
+If you have any questions or need help, please reply to this email and we’ll assist you right away.
+
+Thank you for choosing Sena Fashion,
+Sena Fashion Support Team`;
+
+      $("mailModal").classList.remove("hidden");
+    }
 
     function closeMail(){ $("mailModal").classList.add("hidden"); }
 
@@ -1567,6 +1743,7 @@ Thank you for choosing Sena Fashion.`;
     // ---------- INIT ----------
     document.addEventListener("DOMContentLoaded", ()=>{
       $("yy").textContent = new Date().getFullYear();
+      if($("yy2")) $("yy2").textContent = new Date().getFullYear();
       updateCartCount();
       updateAuthUI();
       loadProducts();
