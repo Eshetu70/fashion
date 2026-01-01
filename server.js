@@ -1,11 +1,11 @@
 /**
- * server.js ✅ FULL UPDATED (Sena Fashion)
+ * server.js ✅ FULL UPDATED (Sena Fashion) — FAST + MOBILE SAFE
  * - MongoDB (products, users, orders)
  * - Products CRUD (Admin key)
  * - Auth (register/login) JWT
  * - Orders (FormData OR JSON)
  * - Customer: My Orders
- * - Admin: View ALL orders, Update Status/Payment, Email customer (professional email)
+ * - Admin: View ALL orders, Update Status/Payment, Email customer
  *
  * npm i express cors mongoose multer bcryptjs jsonwebtoken nodemailer dotenv
  */
@@ -59,7 +59,13 @@ if (!JWT_SECRET) { console.error("❌ Missing JWT_SECRET"); process.exit(1); }
 // ---------------- UPLOADS ----------------
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-app.use("/uploads", express.static(UPLOAD_DIR));
+
+// ✅ Serve uploads w/ caching (faster mobile)
+app.use("/uploads", express.static(UPLOAD_DIR, {
+  setHeaders(res){
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  }
+}));
 
 // ---------------- MONGO ----------------
 mongoose
@@ -85,7 +91,7 @@ const productSchema = new mongoose.Schema(
     category: { type: String, required: true, trim: true },
     gender: { type: String, required: true, trim: true },
     price: { type: Number, required: true },
-    image: { type: String, default: "" },
+    image: { type: String, default: "" }, // store full URL
   },
   { timestamps: true }
 );
@@ -101,7 +107,7 @@ const orderSchema = new mongoose.Schema(
         name: { type: String, required: true },
         price: { type: Number, required: true },
         qty: { type: Number, required: true },
-        image: { type: String, default: "" },
+        image: { type: String, default: "" }, // store full URL
       },
     ],
     total: { type: Number, required: true },
@@ -118,7 +124,7 @@ const orderSchema = new mongoose.Schema(
       method: { type: String, enum: ["cash", "card", "telebirr"], required: true },
       status: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
       telebirrRef: { type: String, default: "" },
-      proofUrl: { type: String, default: "" },
+      proofUrl: { type: String, default: "" }, // full URL
     },
     status: { type: String, enum: ["placed", "processing", "delivered", "cancelled"], default: "placed" },
   },
@@ -133,6 +139,8 @@ function publicBaseUrl(req) {
 function makeOrderId() {
   return "ORD-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2, 7).toUpperCase();
 }
+function safeTrim(v){ return String(v ?? "").trim(); }
+function isDataUrl(v){ return typeof v === "string" && v.startsWith("data:"); }
 
 // ---------------- MIDDLEWARE ----------------
 function requireAdmin(req, res, next) {
@@ -200,17 +208,30 @@ async function sendEmailSafe({ to, subject, text }) {
   }
 }
 
+// ✅ FAST: send email after response (no waiting)
+function sendEmailAsync(payload){
+  setImmediate(async () => {
+    try{
+      const r = await sendEmailSafe(payload);
+      if(!r.ok) console.warn("⚠️ Email failed:", r.reason);
+    }catch(e){
+      console.warn("⚠️ Email error:", e.message);
+    }
+  });
+}
+
 function buildCustomerEmailText(order, customNote) {
   const items = (order.items || [])
     .map(i => `• ${i.name} x${i.qty} — ${i.price} ETB`)
     .join("\n");
 
   const note = (customNote || "").trim();
+  const brand = EMAIL_FROM_NAME || "Sena Fashion";
 
   return `
 Hello ${order.customer?.fullName || "Customer"},
 
-Thank you for shopping with ${EMAIL_FROM_NAME || "Sena Fashion"}.
+Thank you for shopping with ${brand}.
 
 ${note ? note + "\n\n" : ""}Order Details:
 - Order ID: ${order.orderId}
@@ -225,16 +246,14 @@ ${items || "-"}
 If you have any questions, reply to this email and we will assist you.
 
 Warm regards,
-${EMAIL_FROM_NAME || "Sena Fashion"}
+${brand} Support Team
   `.trim();
 }
 
-
 // ---------------- ROUTES ----------------
 app.get("/", (req, res) => res.json({ ok: true, app: "Sena Fashion API" }));
-app.get("/api/version", (req, res) => res.json({ version: "2025-12-31-full-ui-admin-orders-email" }));
+app.get("/api/version", (req, res) => res.json({ version: "2026-01-01-full-pro-ui-fast-orders" }));
 
-// Admin ping for frontend “Test Admin”
 app.get("/api/admin/ping", requireAdmin, (req, res) => res.json({ ok: true }));
 
 // ---------- AUTH ----------
@@ -336,7 +355,6 @@ app.post("/api/products", requireAdmin, (req, res) => {
   });
 });
 
-// Edit product (image optional)
 app.put("/api/products/:id", requireAdmin, (req, res) => {
   uploadProductImage(req, res, async (err) => {
     try {
@@ -383,19 +401,17 @@ app.delete("/api/products/:id", requireAdmin, async (req, res) => {
   }
 });
 
-// ---------- ORDERS (CUSTOMER) ----------
+// ---------- ORDERS ----------
 app.post("/api/orders", auth, (req, res) => {
   uploadOrderProof(req, res, async (err) => {
     try {
       if (err) return res.status(400).json({ error: "Upload error", details: err.message });
 
-      // Accept FormData OR JSON
       const raw = req.body?.items ?? req.body?.cartItems ?? req.body?.products ?? [];
       let items = [];
 
-      if (Array.isArray(raw)) {
-        items = raw;
-      } else {
+      if (Array.isArray(raw)) items = raw;
+      else {
         try { items = JSON.parse(raw || "[]"); }
         catch { return res.status(400).json({ error: "Invalid items payload (must be JSON array string)" }); }
       }
@@ -404,16 +420,16 @@ app.post("/api/orders", auth, (req, res) => {
         return res.status(400).json({ error: "Cart items required", debug: { gotKeys: Object.keys(req.body || {}) } });
       }
 
-      const fullName = (req.body.fullName || "").trim();
-      const phone = (req.body.phone || "").trim();
-      const email = (req.body.email || "").trim();
-      const address = (req.body.address || "").trim();
-      const city = (req.body.city || "").trim();
-      const country = (req.body.country || "").trim();
-      const notes = (req.body.notes || "").trim();
+      const fullName = safeTrim(req.body.fullName);
+      const phone = safeTrim(req.body.phone);
+      const email = safeTrim(req.body.email);
+      const address = safeTrim(req.body.address);
+      const city = safeTrim(req.body.city);
+      const country = safeTrim(req.body.country);
+      const notes = safeTrim(req.body.notes);
 
-      const paymentMethod = (req.body.paymentMethod || "cash").trim();
-      const telebirrRef = (req.body.telebirrRef || "").trim();
+      const paymentMethod = safeTrim(req.body.paymentMethod || "cash");
+      const telebirrRef = safeTrim(req.body.telebirrRef);
 
       if (!fullName) return res.status(400).json({ error: "Full name required" });
       if (!phone) return res.status(400).json({ error: "Phone required" });
@@ -421,19 +437,33 @@ app.post("/api/orders", auth, (req, res) => {
 
       const total = items.reduce((sum, it) => sum + (Number(it.price) || 0) * (Number(it.qty) || 1), 0);
 
-      const proofUrl = req.file ? `/uploads/${req.file.filename}` : "";
+      // proof url full
+      const proofUrl = req.file ? `${publicBaseUrl(req)}/uploads/${req.file.filename}` : "";
+
+      // ✅ Mobile safety: if someone sends base64 image in order items, replace with product image URL from DB
+      const productIds = items.map(it => String(it.productId || "")).filter(Boolean);
+      const dbProducts = await Product.find({ _id: { $in: productIds } }).select({ _id: 1, image: 1 }).lean();
+      const imageMap = new Map(dbProducts.map(p => [p._id.toString(), p.image || ""]));
+
+      const normalizedItems = items.map(it => {
+        const pid = String(it.productId || "");
+        const incoming = String(it.image || "");
+        const safeImg = isDataUrl(incoming) ? (imageMap.get(pid) || "") : incoming;
+        return {
+          productId: pid,
+          name: String(it.name || ""),
+          price: Number(it.price) || 0,
+          qty: Number(it.qty) || 1,
+          image: safeImg,
+        };
+      });
+
       const userObjectId = new mongoose.Types.ObjectId(req.user.id);
 
       const orderDoc = await Order.create({
         orderId: makeOrderId(),
         userId: userObjectId,
-        items: items.map((it) => ({
-          productId: String(it.productId || ""),
-          name: String(it.name || ""),
-          price: Number(it.price) || 0,
-          qty: Number(it.qty) || 1,
-          image: String(it.image || ""),
-        })),
+        items: normalizedItems,
         total,
         customer: { fullName, phone, email, address, city, country, notes },
         payment: {
@@ -445,7 +475,7 @@ app.post("/api/orders", auth, (req, res) => {
         status: "placed",
       });
 
-      // Email owner (optional)
+      // ✅ FAST: email owner async (no await)
       if (OWNER_EMAIL) {
         const ownerText = `New Order ✅
 
@@ -455,22 +485,31 @@ Total: ${orderDoc.total} ETB
 Customer:
 ${orderDoc.customer.fullName} | ${orderDoc.customer.phone}
 Email: ${orderDoc.customer.email || "-"}
+
+Address:
 ${orderDoc.customer.address}
 
 Payment:
 ${orderDoc.payment.method} | ${orderDoc.payment.status}
 TelebirrRef: ${orderDoc.payment.telebirrRef || "-"}
-Proof: ${orderDoc.payment.proofUrl ? (publicBaseUrl(req) + orderDoc.payment.proofUrl) : "-"}
+Proof: ${orderDoc.payment.proofUrl || "-"}
 
 Items:
 ${(orderDoc.items||[]).map(i=>`• ${i.name} x${i.qty} — ${i.price} ETB`).join("\n")}
 `;
-        await sendEmailSafe({ to: OWNER_EMAIL, subject: `New Order ${orderDoc.orderId} (${orderDoc.total} ETB)`, text: ownerText });
+        sendEmailAsync({ to: OWNER_EMAIL, subject: `New Order ${orderDoc.orderId} (${orderDoc.total} ETB)`, text: ownerText });
       }
 
       return res.json({
         ok: true,
-        order: { orderId: orderDoc.orderId, total: orderDoc.total, status: orderDoc.status, createdAt: orderDoc.createdAt },
+        message: "✅ Your order has been placed successfully. Thank you for shopping with Sena Fashion!",
+        order: {
+          orderId: orderDoc.orderId,
+          total: orderDoc.total,
+          status: orderDoc.status,
+          payment: orderDoc.payment,
+          createdAt: orderDoc.createdAt,
+        },
       });
     } catch (e) {
       return res.status(500).json({ error: "Order failed", details: e.message });
@@ -543,7 +582,7 @@ app.post("/api/admin/orders/:id/email", requireAdmin, async (req, res) => {
     const order = await Order.findById(req.params.id).lean();
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    const to = (order.customer?.email || "").trim();
+    const to = safeTrim(order.customer?.email || "");
     if (!to) return res.status(400).json({ error: "Customer email is missing for this order" });
 
     const text = buildCustomerEmailText(order, message || "");
@@ -554,7 +593,7 @@ app.post("/api/admin/orders/:id/email", requireAdmin, async (req, res) => {
     });
 
     if (!result.ok) return res.status(500).json({ error: "Email failed", details: result.reason });
-    return res.json({ ok: true });
+    return res.json({ ok: true, message: "✅ Email sent successfully to the customer." });
   } catch (e) {
     res.status(500).json({ error: "Email failed", details: e.message });
   }

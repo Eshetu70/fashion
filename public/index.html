@@ -19,15 +19,24 @@
       --good:#30d158;
       --bad:#ff453a;
       --warn:#ff9f0a;
-      --white:#fff;
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
     }
+
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(180deg,#070a10,#0b0f14);color:var(--text)}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      background: radial-gradient(900px 500px at 20% 10%, rgba(90,167,255,.15), transparent 60%),
+                  radial-gradient(900px 500px at 80% 10%, rgba(138,91,255,.12), transparent 60%),
+                  linear-gradient(180deg,#070a10,#0b0f14);
+      color:var(--text);
+      min-height:100vh;
+    }
     a{color:inherit;text-decoration:none}
     .container{max-width:1320px;margin:0 auto;padding:0 18px}
     .hidden{display:none!important}
 
-    /* ✅ Fix: dropdown/select menus being clipped/overlapped */
+    /* make selects safe on mobile */
     .panel, .admin-box, .modal, .drawer{ overflow: visible; }
     .row, .actions, .admin-box{ position: relative; z-index: 1; }
     select:focus{ position: relative; z-index: 9999; }
@@ -35,8 +44,8 @@
     /* Header */
     header{
       position:sticky;top:0;z-index:1000;
-      background:rgba(11,15,20,.8);
-      backdrop-filter: blur(10px);
+      background:rgba(11,15,20,.78);
+      backdrop-filter: blur(12px);
       border-bottom:1px solid var(--line);
     }
     .nav{
@@ -46,6 +55,7 @@
     .brand{
       display:flex;align-items:center;gap:10px;font-weight:1000;
       letter-spacing:.3px; cursor:pointer;
+      user-select:none;
     }
     .brand-badge{
       width:40px;height:40px;border-radius:12px;
@@ -56,7 +66,7 @@
       flex:0 0 auto;
     }
     .brand-title{font-size:1.1rem;line-height:1}
-    .brand-sub{font-size:.8rem;color:var(--muted);font-weight:700}
+    .brand-sub{font-size:.8rem;color:var(--muted);font-weight:800}
 
     .nav-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
     .pill{
@@ -65,7 +75,7 @@
       padding:.55rem .8rem;border-radius:999px;
       font-weight:900;cursor:pointer;user-select:none;
       display:inline-flex;align-items:center;gap:8px;
-      transition:.2s;
+      transition:.15s;
     }
     .pill:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
     .pill .dot{
@@ -84,10 +94,9 @@
       padding:0 7px;
     }
 
-    /* ---------------- MOBILE NAV ---------------- */
+    /* Mobile nav buttons */
     .nav-mobile{display:none;gap:10px;align-items:center}
     .nav-desktop{display:flex}
-
     .iconBtn{
       border:1px solid var(--line);
       background:rgba(255,255,255,.04);
@@ -96,14 +105,13 @@
       border-radius:14px;
       font-weight:1000;
       cursor:pointer;
-      transition:.2s;
+      transition:.15s;
       display:inline-flex;
       align-items:center;
       gap:8px;
       white-space:nowrap;
     }
     .iconBtn:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
-
     .miniCount{
       background:rgba(255,69,58,.16);
       border:1px solid rgba(255,69,58,.3);
@@ -130,9 +138,7 @@
       padding:14px;
       overflow:auto;
     }
-    .mHead{
-      display:flex;justify-content:space-between;align-items:center;gap:10px;
-    }
+    .mHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
     .mBrand{display:flex;gap:10px;align-items:center}
     .mAuthBox{
       margin-top:14px;
@@ -164,29 +170,33 @@
     }
 
     /* Hero */
-    .hero{padding:34px 0 18px}
+    .hero{padding:28px 0 12px}
     .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:stretch}
     .hero-card{
       border:1px solid var(--line);
       background:radial-gradient(1200px 600px at 20% 10%, rgba(90,167,255,.25), transparent 55%),
                  radial-gradient(900px 500px at 85% 5%, rgba(138,91,255,.18), transparent 60%),
                  rgba(255,255,255,.03);
-      border-radius:20px;
+      border-radius:22px;
       padding:22px;
       min-height:210px;
       overflow:hidden;
       position:relative;
+      box-shadow: var(--shadow);
     }
     .hero-card h1{font-size:2rem;line-height:1.12;margin-bottom:8px;letter-spacing:.2px}
-    .hero-card p{color:var(--muted);max-width:56ch}
+    .hero-card p{color:var(--muted);max-width:62ch}
     .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
     .btn{
       border:none;border-radius:14px;font-weight:1000;
       padding:.8rem 1rem;cursor:pointer;
-      transition:.2s;
+      transition:.15s;
       display:inline-flex;align-items:center;gap:10px;
       justify-content:center;
+      user-select:none;
     }
+    .btn:disabled{opacity:.6;cursor:not-allowed;transform:none!important}
     .btn-primary{
       background:linear-gradient(135deg,var(--accent),var(--accent2));
       color:#fff;
@@ -199,11 +209,13 @@
       border:1px solid var(--line);
     }
     .btn-ghost:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
+
     .stat-card{
       border:1px solid var(--line);
       background:rgba(255,255,255,.03);
-      border-radius:20px;padding:18px;
+      border-radius:22px;padding:18px;
       display:grid;gap:10px;
+      box-shadow: var(--shadow);
     }
     .stat-row{
       display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -213,6 +225,7 @@
     }
     .stat-row .label{color:var(--muted);font-weight:900}
     .stat-row .value{font-weight:1000}
+
     .badge{
       display:inline-flex;align-items:center;gap:8px;
       padding:.35rem .6rem;border-radius:999px;
@@ -263,7 +276,7 @@
     input::placeholder, textarea::placeholder{color:rgba(167,179,199,.7)}
     .control{width:min(260px,100%)}
 
-    /* Products */
+    /* Products grid */
     .grid{
       margin:18px 0 40px;
       display:grid;
@@ -275,15 +288,27 @@
       background:rgba(255,255,255,.03);
       border-radius:18px;
       overflow:hidden;
-      transition:.18s;
+      transition:.15s;
     }
     .card:hover{transform:translateY(-2px);background:rgba(255,255,255,.05)}
     .img{
-      width:100%;height:260px;background:rgba(255,255,255,.03);
+      width:100%;
+      height:260px;
+      background:rgba(255,255,255,.04);
       display:flex;align-items:center;justify-content:center;
       overflow:hidden;
+      position:relative;
     }
-    .img img{width:100%;height:100%;object-fit:cover}
+    /* ✅ MOBILE IMAGE FIXES */
+    .img img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      background:rgba(255,255,255,.04);
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
     .p-body{padding:12px}
     .p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
     .meta{color:var(--muted);font-weight:1000;font-size:.8rem}
@@ -296,12 +321,11 @@
       border:1px solid var(--line);
       color:var(--text);
       flex:1;
-      justify-content:center;
     }
     .btn-dark:hover{background:rgba(255,255,255,.08)}
     .btn-buy{
       background:linear-gradient(135deg,var(--accent),var(--accent2));
-      color:#fff;flex:1;justify-content:center;
+      color:#fff;flex:1;
     }
 
     .empty{
@@ -366,7 +390,7 @@
       border-radius:16px;padding:10px;
     }
     .thumb{width:70px;height:70px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.03)}
-    .thumb img{width:100%;height:100%;object-fit:cover}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
     .it-mid{flex:1}
     .it-mid b{font-weight:1000}
     .it-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
@@ -406,12 +430,10 @@
     .hr{height:1px;background:rgba(255,255,255,.10);margin:12px 0}
     .actions{display:flex;gap:10px;flex-wrap:wrap}
 
-    /* Drawer cart */
     .drawerWrap{
       position:fixed;inset:0;
       background:rgba(0,0,0,.55);
       z-index:2400;
-     
       display:flex;justify-content:flex-end;
     }
     .drawer{
@@ -422,6 +444,7 @@
       padding:14px;
       overflow:auto;
     }
+
     .cartLine{
       display:flex;gap:10px;align-items:center;
       border:1px solid rgba(255,255,255,.10);
@@ -446,7 +469,7 @@
       color:#fff;font-weight:1000;cursor:pointer;
     }
 
-    /* ✅ Order item rows (Admin + My Orders) */
+    /* Orders item */
     .orderItems{display:grid;gap:10px;margin-top:10px}
     .orderItem{
       display:flex;gap:12px;align-items:center;
@@ -461,7 +484,7 @@
       border:1px solid rgba(255,255,255,.08);
       flex:0 0 auto;
     }
-    .orderThumb img{width:100%;height:100%;object-fit:cover}
+    .orderThumb img{width:100%;height:100%;object-fit:cover;display:block}
     .orderInfo{flex:1;min-width:0}
     .orderInfo b{font-weight:1000}
     .orderPrice{
@@ -478,11 +501,90 @@
       color:rgba(255,255,255,.7);
       text-align:center;
     }
+
+    /* Toast */
+    .toastWrap{
+      position:fixed;
+      right:16px; bottom:16px;
+      z-index:4000;
+      display:grid; gap:10px;
+    }
+    .toast{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(17,27,40,.96);
+      border-radius:16px;
+      padding:12px 12px;
+      box-shadow: var(--shadow);
+      min-width:min(420px, calc(100vw - 32px));
+      max-width:520px;
+      display:flex; gap:10px; align-items:flex-start;
+    }
+    .toast .tIcon{
+      width:38px;height:38px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(48,209,88,.18);
+      border:1px solid rgba(48,209,88,.25);
+      flex:0 0 auto;
+      font-weight:1000;
+    }
+    .toast .tBody{flex:1}
+    .toast .tTitle{font-weight:1000}
+    .toast .tText{color:var(--muted);font-weight:800;margin-top:4px;line-height:1.35}
+    .toast .tClose{
+      width:36px;height:36px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      color:#fff;font-weight:1000;cursor:pointer;
+    }
+
+    /* Loading overlay */
+    .loadingBar{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:3900;
+      display:flex; align-items:center; justify-content:center;
+      padding:14px;
+    }
+    .loadingCard{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(17,27,40,.96);
+      border-radius:18px;
+      padding:16px;
+      box-shadow: var(--shadow);
+      width:min(520px, 100%);
+    }
+    .spinner{
+      width:28px;height:28px;
+      border-radius:999px;
+      border:3px solid rgba(255,255,255,.18);
+      border-top-color: rgba(90,167,255,.95);
+      animation: spin 0.8s linear infinite;
+      display:inline-block;
+      vertical-align:middle;
+      margin-right:10px;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 
 <body>
-  <!-- ✅ FULL UPDATED HEADER (Desktop + Mobile) -->
+  <!-- LOADING OVERLAY -->
+  <div id="loading" class="loadingBar hidden">
+    <div class="loadingCard">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="spinner"></span>
+        <div>
+          <div style="font-weight:1000" id="loadingTitle">Processing...</div>
+          <div class="sub" id="loadingText">Please wait.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div id="toastWrap" class="toastWrap"></div>
+
+  <!-- HEADER -->
   <header>
     <div class="container">
       <div class="nav">
@@ -494,7 +596,7 @@
           </div>
         </a>
 
-        <!-- Desktop pills -->
+        <!-- Desktop -->
         <div class="nav-right nav-desktop">
           <div class="pill" onclick="showShop()">🛍️ Shop</div>
           <div class="pill" onclick="openOrders()">📦 My Orders</div>
@@ -510,20 +612,18 @@
           </div>
         </div>
 
-        <!-- Mobile buttons -->
+        <!-- Mobile -->
         <div class="nav-mobile">
           <button class="iconBtn" onclick="openCart()" aria-label="Open cart">
             🛒 <span class="miniCount" id="cartCountMobile">0</span>
           </button>
-          <button class="iconBtn" onclick="toggleMobileMenu(true)" aria-label="Open menu">
-            ☰
-          </button>
+          <button class="iconBtn" onclick="toggleMobileMenu(true)" aria-label="Open menu">☰</button>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- ✅ MOBILE MENU DRAWER -->
+  <!-- MOBILE MENU -->
   <div id="mMenuWrap" class="mMenuWrap hidden" onclick="if(event.target.id==='mMenuWrap'){toggleMobileMenu(false)}">
     <div class="mMenu" onclick="event.stopPropagation()">
       <div class="mHead">
@@ -674,7 +774,7 @@
           <!-- Add Product -->
           <div class="admin-box">
             <h3>➕ Add Product</h3>
-            <div class="note">Image required (max 2MB). After upload, the product will appear immediately in Shop (auto refresh).</div>
+            <div class="note">Image required (max 2MB). After upload, the product will appear immediately in Shop.</div>
 
             <form id="productForm" class="stack">
               <div class="drop" onclick="$('imageInput').click()">
@@ -913,9 +1013,7 @@
     </div>
   </div>
 
-  <footer>
-    © <span id="yy"></span> Sena Fashion. All rights reserved.
-  </footer>
+  <footer>© <span id="yy"></span> Sena Fashion. All rights reserved.</footer>
 
   <script>
     // ---------- CONFIG ----------
@@ -949,6 +1047,34 @@
     async function readJsonSafe(res){
       const text = await res.text();
       try { return { text, json: JSON.parse(text) }; } catch { return { text, json: null }; }
+    }
+
+    // ---------- LOADING + TOAST ----------
+    function showLoading(title="Processing...", text="Please wait."){
+      $("loadingTitle").textContent = title;
+      $("loadingText").textContent = text;
+      $("loading").classList.remove("hidden");
+    }
+    function hideLoading(){ $("loading").classList.add("hidden"); }
+
+    function toast(title, text, type="success", timeout=4500){
+      const wrap = $("toastWrap");
+      const t = document.createElement("div");
+      t.className = "toast";
+      const icon = type==="success" ? "✅" : type==="error" ? "❌" : "ℹ️";
+      const bg = type==="success" ? "rgba(48,209,88,.18)" : type==="error" ? "rgba(255,69,58,.18)" : "rgba(90,167,255,.16)";
+      const br = type==="success" ? "rgba(48,209,88,.25)" : type==="error" ? "rgba(255,69,58,.25)" : "rgba(90,167,255,.25)";
+      t.innerHTML = `
+        <div class="tIcon" style="background:${bg};border-color:${br}">${icon}</div>
+        <div class="tBody">
+          <div class="tTitle">${escapeHtml(title)}</div>
+          <div class="tText">${escapeHtml(text)}</div>
+        </div>
+        <button class="tClose" aria-label="Close">✕</button>
+      `;
+      t.querySelector(".tClose").onclick = () => t.remove();
+      wrap.appendChild(t);
+      if(timeout) setTimeout(()=>{ if(t.isConnected) t.remove(); }, timeout);
     }
 
     // ---------- MOBILE MENU ----------
@@ -985,7 +1111,7 @@
       if(!getToken()){ openAuth(); return; }
       const c = prompt("Type:\n1 = My Orders\n2 = Logout");
       if(c === "1") openOrders();
-      if(c === "2"){ clearToken(); updateAuthUI(); alert("Logged out."); }
+      if(c === "2"){ clearToken(); updateAuthUI(); toast("Logged out","You have been logged out successfully."); }
     }
 
     function openAuth(){
@@ -1017,6 +1143,7 @@
       const password = $("regPass").value;
 
       try{
+        showLoading("Creating account...","Please wait.");
         const res = await fetch(API_BASE + "/api/auth/register",{
           method:"POST",
           headers:{ "Content-Type":"application/json" },
@@ -1027,9 +1154,11 @@
         setToken(json.token);
         updateAuthUI();
         closeAuth();
-        alert("✅ Account created. You are logged in!");
+        toast("Welcome!","Your account has been created successfully.");
       }catch(e){
         $("regMsg").textContent = e.message;
+      }finally{
+        hideLoading();
       }
     }
 
@@ -1039,6 +1168,7 @@
       const password = $("loginPass").value;
 
       try{
+        showLoading("Signing in...","Please wait.");
         const res = await fetch(API_BASE + "/api/auth/login",{
           method:"POST",
           headers:{ "Content-Type":"application/json" },
@@ -1049,9 +1179,11 @@
         setToken(json.token);
         updateAuthUI();
         closeAuth();
-        alert("✅ Logged in!");
+        toast("Signed in","You are logged in successfully.");
       }catch(e){
         $("loginMsg").textContent = e.message;
+      }finally{
+        hideLoading();
       }
     }
 
@@ -1126,6 +1258,18 @@
       }
     }
 
+    // ✅ mobile safe image html: decoding + lazy + referrerpolicy
+    function imgTag(url, alt){
+      const safe = url || "";
+      if(!safe) return "";
+      return `<img src="${safe}"
+        alt="${escapeHtml(alt||"")}"
+        loading="lazy"
+        decoding="async"
+        referrerpolicy="no-referrer"
+        onerror="this.style.display='none'">`;
+    }
+
     function renderProducts(){
       const q = $("q").value.trim().toLowerCase();
       const g = $("genderFilter").value;
@@ -1151,9 +1295,7 @@
 
       grid.innerHTML = list.map(p => `
         <div class="card">
-          <div class="img">
-            <img src="${p.image||""}" alt="${escapeHtml(p.name||"")}" onerror="this.style.display='none'">
-          </div>
+          <div class="img">${imgTag(p.image, p.name)}</div>
           <div class="p-body">
             <div class="p-top">
               <div class="meta">${escapeHtml(p.category||"")} • ${escapeHtml(p.gender||"")}</div>
@@ -1195,12 +1337,13 @@
 
     function addToCart(productId){
       const p = products.find(x => String(x.id) === String(productId));
-      if(!p) return alert("Product not found");
+      if(!p) return toast("Product not found","Please refresh the page.","error");
       const ex = cart.find(x => String(x.productId) === String(productId));
       if(ex) ex.qty = (Number(ex.qty)||1) + 1;
       else cart.push({ productId: p.id, name:p.name, price:Number(p.price)||0, qty:1, image:p.image||"" });
       saveCart();
       renderCart();
+      toast("Added to cart", p.name || "Item added.");
     }
 
     function removeFromCart(productId){
@@ -1237,7 +1380,7 @@
       }
       box.innerHTML = cart.map(it => `
         <div class="cartLine">
-          <div class="thumb"><img src="${it.image||""}" onerror="this.style.display='none'"></div>
+          <div class="thumb">${imgTag(it.image, it.name)}</div>
           <div style="flex:1">
             <div style="font-weight:1000">${escapeHtml(it.name||"")}</div>
             <div class="meta" style="margin-top:4px">${money(it.price)} ETB</div>
@@ -1254,21 +1397,18 @@
     }
 
     // ---------- CHECKOUT ----------
-   function openCheckout(){
-  if(cart.length === 0) return alert("Cart is empty");
-  if(!getToken()){ alert("Please login first."); openAuth(); return; }
+    function openCheckout(){
+      if(cart.length === 0) return toast("Cart is empty","Add items before checkout.","error");
+      if(!getToken()){ toast("Login required","Please login before checkout.","info"); openAuth(); return; }
 
-  // ✅ close cart first so nothing blocks the modal
-  closeCart();
-
-  // small delay to avoid any animation overlap on mobile
-  setTimeout(() => {
-    $("ckTotal").value = `${money(subtotal())} ETB`;
-    $("checkoutMsg").textContent = "";
-    togglePayFields();
-    $("checkoutModal").classList.remove("hidden");
-  }, 30);
-}
+      closeCart();
+      setTimeout(() => {
+        $("ckTotal").value = `${money(subtotal())} ETB`;
+        $("checkoutMsg").textContent = "";
+        togglePayFields();
+        $("checkoutModal").classList.remove("hidden");
+      }, 30);
+    }
 
     function closeCheckout(){ $("checkoutModal").classList.add("hidden"); }
     function togglePayFields(){
@@ -1296,6 +1436,7 @@
       if(!address) return $("checkoutMsg").textContent = "Address is required.";
 
       const fd = new FormData();
+      // IMPORTANT: send only URL images (not base64)
       fd.append("items", JSON.stringify(cart.map(it => ({
         productId: it.productId,
         name: it.name,
@@ -1316,6 +1457,7 @@
       if(proof) fd.append("paymentProof", proof);
 
       try{
+        showLoading("Placing order...","Please wait while we confirm your order.");
         const res = await fetch(API_BASE + "/api/orders",{
           method:"POST",
           headers:{ "Authorization":"Bearer " + getToken() },
@@ -1324,7 +1466,9 @@
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Order failed");
 
-        alert("✅ Order placed: " + (json?.order?.orderId || ""));
+        const orderId = json?.order?.orderId || "";
+        toast("Order placed successfully", `Order ID: ${orderId}\nThank you for shopping with Sena Fashion!`, "success", 6000);
+
         cart = [];
         saveCart();
         closeCheckout();
@@ -1332,10 +1476,13 @@
         openOrders();
       }catch(e){
         $("checkoutMsg").textContent = e.message;
+        toast("Order failed", e.message, "error");
+      }finally{
+        hideLoading();
       }
     }
 
-    // ---------- MY ORDERS (✅ includes item images) ----------
+    // ---------- MY ORDERS ----------
     async function loadMyOrders(){
       const box = $("ordersList");
       box.innerHTML = `<div class="empty">Loading...</div>`;
@@ -1355,10 +1502,9 @@
         box.innerHTML = orders.map(o => {
           const items = (o.items||[]).map(i=>{
             const lineTotal = (Number(i.price)||0) * (Number(i.qty)||1);
-            const img = i.image || "";
             return `
               <div class="orderItem">
-                <div class="orderThumb">${img ? `<img src="${img}" onerror="this.style.display='none'">` : ``}</div>
+                <div class="orderThumb">${imgTag(i.image||"", i.name)}</div>
                 <div class="orderInfo">
                   <b>${escapeHtml(i.name||"")}</b>
                   <div class="sub">Qty: ${Number(i.qty)||1} • ${money(i.price)} ETB</div>
@@ -1393,24 +1539,27 @@
       const k = prompt("Enter ADMIN_API_KEY:");
       if(!k) return;
       localStorage.setItem(ADMIN_KEY_STORAGE, k.trim());
-      alert("Admin key saved on this browser.");
+      toast("Admin key saved","Admin access enabled on this device.");
       loadAdminOrders();
     }
     function logoutAdmin(){
       localStorage.removeItem(ADMIN_KEY_STORAGE);
-      alert("Admin key removed.");
+      toast("Admin logged out","Admin key removed from this device.");
       loadAdminOrders();
     }
     async function testAdminKey(){
       const k = getAdminKey();
-      if(!k) return alert("Admin key not set.");
+      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
       try{
+        showLoading("Testing admin key...","Please wait.");
         const res = await fetch(API_BASE + "/api/admin/ping",{ headers:{ "x-admin-key": k } });
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Admin ping failed");
-        alert("✅ Admin key OK!");
+        toast("Admin OK","Your admin key is valid.");
       }catch(e){
-        alert("❌ " + e.message);
+        toast("Admin failed", e.message, "error");
+      }finally{
+        hideLoading();
       }
     }
 
@@ -1423,7 +1572,7 @@
       }
       list.innerHTML = products.map(p=>`
         <div class="item">
-          <div class="thumb"><img src="${p.image||""}" onerror="this.style.display='none'"></div>
+          <div class="thumb">${imgTag(p.image||"", p.name)}</div>
           <div class="it-mid">
             <b>${escapeHtml(p.name||"")}</b>
             <div class="sub">${escapeHtml(p.category||"")} • ${escapeHtml(p.gender||"")} • ${money(p.price)} ETB</div>
@@ -1452,11 +1601,11 @@
     $("productForm").addEventListener("submit", async (e)=>{
       e.preventDefault();
       const adminKey = getAdminKey();
-      if(!adminKey) return alert("Admin key not set. Click Set Admin Key.");
+      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
 
       const file = $("imageInput").files[0];
-      if(!file) return alert("Please select an image.");
-      if(file.size > 2*1024*1024) return alert("Image too large. Max 2MB.");
+      if(!file) return toast("Image required","Please select a product image.","error");
+      if(file.size > 2*1024*1024) return toast("Image too large","Max 2MB allowed.","error");
 
       const fd = new FormData();
       fd.append("image", file);
@@ -1470,6 +1619,7 @@
       $("addBtn").disabled = true;
 
       try{
+        showLoading("Uploading product...","Please wait.");
         const res = await fetch(API_BASE + "/api/products",{
           method:"POST",
           headers:{ "x-admin-key": adminKey },
@@ -1486,16 +1636,19 @@
         resetShopFiltersToAll();
         showShop();
         scrollToProducts();
+        toast("Product added","Your product is now visible in the shop.");
       }catch(err){
         $("adminMsg").textContent = "Error: " + err.message;
+        toast("Upload failed", err.message, "error");
       }finally{
         $("addBtn").disabled = false;
+        hideLoading();
       }
     });
 
     function openEdit(id){
       const p = products.find(x=> String(x.id)===String(id));
-      if(!p) return alert("Not found");
+      if(!p) return toast("Not found","Product not found.","error");
 
       $("editMsg").textContent = "";
       $("editId").value = p.id;
@@ -1525,7 +1678,7 @@
 
     async function saveEdit(){
       const adminKey = getAdminKey();
-      if(!adminKey) return alert("Admin key not set.");
+      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
 
       const id = $("editId").value;
       const name = $("editName").value.trim();
@@ -1548,6 +1701,7 @@
       if(file) fd.append("image", file);
 
       try{
+        showLoading("Saving changes...","Please wait.");
         const res = await fetch(API_BASE + "/api/products/" + encodeURIComponent(id),{
           method:"PUT",
           headers:{ "x-admin-key": adminKey },
@@ -1558,17 +1712,22 @@
 
         closeEdit();
         await loadProducts();
+        toast("Saved","Product updated successfully.");
       }catch(e){
         $("editMsg").textContent = e.message;
+        toast("Update failed", e.message, "error");
+      }finally{
+        hideLoading();
       }
     }
 
     async function deleteProduct(id){
       if(!confirm("Delete this product?")) return;
       const adminKey = getAdminKey();
-      if(!adminKey) return alert("Admin key not set.");
+      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
 
       try{
+        showLoading("Deleting product...","Please wait.");
         const res = await fetch(API_BASE + "/api/products/" + encodeURIComponent(id),{
           method:"DELETE",
           headers:{ "x-admin-key": adminKey }
@@ -1576,12 +1735,15 @@
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Delete failed");
         await loadProducts();
+        toast("Deleted","Product removed successfully.");
       }catch(e){
-        alert("Delete error: " + e.message);
+        toast("Delete failed", e.message, "error");
+      }finally{
+        hideLoading();
       }
     }
 
-    // ---------- ADMIN ORDERS (✅ includes item images + polished) ----------
+    // ---------- ADMIN ORDERS ----------
     async function loadAdminOrders(){
       const k = getAdminKey();
       const box = $("adminOrders");
@@ -1605,10 +1767,9 @@
         box.innerHTML = orders.map(o=>{
           const items = (o.items||[]).map(i=>{
             const lineTotal = (Number(i.price)||0) * (Number(i.qty)||1);
-            const img = i.image || "";
             return `
               <div class="orderItem">
-                <div class="orderThumb">${img ? `<img src="${img}" onerror="this.style.display='none'">` : ``}</div>
+                <div class="orderThumb">${imgTag(i.image||"", i.name)}</div>
                 <div class="orderInfo">
                   <b>${escapeHtml(i.name||"")}</b>
                   <div class="sub">Qty: ${Number(i.qty)||1} • ${money(i.price)} ETB</div>
@@ -1671,7 +1832,7 @@
 
     async function adminUpdateOrder(dbId){
       const k = getAdminKey();
-      if(!k) return alert("Admin key not set.");
+      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
 
       const status = $("st_" + dbId).value;
       const paymentStatus = $("pay_" + dbId).value;
@@ -1679,6 +1840,7 @@
       msg.textContent = "Saving...";
 
       try{
+        showLoading("Updating order...","Please wait.");
         const res = await fetch(API_BASE + "/api/admin/orders/" + encodeURIComponent(dbId),{
           method:"PUT",
           headers:{
@@ -1690,18 +1852,20 @@
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Update failed");
         msg.textContent = "✅ Updated successfully.";
+        toast("Order updated","Changes saved successfully.");
         await loadAdminOrders();
       }catch(e){
         msg.textContent = "❌ " + e.message;
+        toast("Update failed", e.message, "error");
+      }finally{
+        hideLoading();
       }
     }
 
     function openMail(dbId, orderId, status, payStatus){
       $("mailOrderId").value = dbId;
       $("mailMsg").textContent = "";
-
       $("mailSubject").value = `Sena Fashion — Order Update (${orderId})`;
-
       $("mailMessage").value =
 `Hello,
 
@@ -1715,7 +1879,6 @@ If you have any questions or need help, please reply to this email and we’ll a
 
 Thank you for choosing Sena Fashion,
 Sena Fashion Support Team`;
-
       $("mailModal").classList.remove("hidden");
     }
 
@@ -1723,7 +1886,7 @@ Sena Fashion Support Team`;
 
     async function sendCustomerEmail(){
       const k = getAdminKey();
-      if(!k) return alert("Admin key not set.");
+      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
 
       const dbId = $("mailOrderId").value;
       const subject = $("mailSubject").value.trim();
@@ -1732,6 +1895,7 @@ Sena Fashion Support Team`;
       $("mailMsg").textContent = "Sending...";
 
       try{
+        showLoading("Sending email...","Please wait.");
         const res = await fetch(API_BASE + "/api/admin/orders/" + encodeURIComponent(dbId) + "/email",{
           method:"POST",
           headers:{
@@ -1743,8 +1907,12 @@ Sena Fashion Support Team`;
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Email failed");
         $("mailMsg").textContent = "✅ Email sent successfully.";
+        toast("Email sent","Customer has been notified.");
       }catch(e){
         $("mailMsg").textContent = "❌ " + e.message;
+        toast("Email failed", e.message, "error");
+      }finally{
+        hideLoading();
       }
     }
 
