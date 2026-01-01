@@ -379,7 +379,7 @@
     .backdrop{
       position:fixed;inset:0;
       background:rgba(0,0,0,.55);
-      z-index:2500;
+      z-index:2600;
       display:flex;align-items:center;justify-content:center;
       padding:14px;
     }
@@ -410,7 +410,8 @@
     .drawerWrap{
       position:fixed;inset:0;
       background:rgba(0,0,0,.55);
-      z-index:2600;
+      z-index:2400;
+     
       display:flex;justify-content:flex-end;
     }
     .drawer{
@@ -1253,15 +1254,22 @@
     }
 
     // ---------- CHECKOUT ----------
-    function openCheckout(){
-      if(cart.length === 0) return alert("Cart is empty");
-      if(!getToken()){ alert("Please login first."); openAuth(); return; }
+   function openCheckout(){
+  if(cart.length === 0) return alert("Cart is empty");
+  if(!getToken()){ alert("Please login first."); openAuth(); return; }
 
-      $("ckTotal").value = `${money(subtotal())} ETB`;
-      $("checkoutMsg").textContent = "";
-      togglePayFields();
-      $("checkoutModal").classList.remove("hidden");
-    }
+  // ✅ close cart first so nothing blocks the modal
+  closeCart();
+
+  // small delay to avoid any animation overlap on mobile
+  setTimeout(() => {
+    $("ckTotal").value = `${money(subtotal())} ETB`;
+    $("checkoutMsg").textContent = "";
+    togglePayFields();
+    $("checkoutModal").classList.remove("hidden");
+  }, 30);
+}
+
     function closeCheckout(){ $("checkoutModal").classList.add("hidden"); }
     function togglePayFields(){
       const m = $("ckPay").value;
