@@ -1,12 +1,18 @@
 /**
- * server.js ✅ FULL UPDATED (Sena Fashion) — 2026-01-01 Pro
+ * server.js ✅ FULL UPDATED (Sena Fashion) — 2026-01-04 FAST FIX
  * - MongoDB (products, users, orders)
  * - Products CRUD (Admin key)
  * - Auth (register/login) JWT
  * - Orders (FormData OR JSON)
  * - Customer: My Orders
  * - Admin: View ALL orders, Update Status/Payment, Email customer
- * - Email: SMTP-first (Render-friendly) + Gmail fallback
+ * ✅ SPEED FIX:
+ *    - Order response returns immediately
+ *    - Email is sent in background (no await)
+ *    - Transporter is cached (no recreate each request)
+ * ✅ Adds:
+ *    - /api/admin/ping
+ *    - /api/admin/test-email
  *
  * npm i express cors mongoose multer bcryptjs jsonwebtoken nodemailer dotenv
  */
@@ -24,8 +30,6 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
 const app = express();
-
-// ✅ IMPORTANT for Render/Proxies so req.protocol becomes https
 app.set("trust proxy", 1);
 
 // ---------------- ENV ----------------
@@ -33,18 +37,14 @@ const {
   PORT = 3000,
   MONGODB_URI,
   ADMIN_API_KEY,
-
-  // JWT (we sanitize it to avoid accidental newline issues)
   JWT_SECRET: JWT_SECRET_RAW,
 
-  // Email (recommended on Render)
   SMTP_HOST,
   SMTP_PORT,
   SMTP_SECURE,
   SMTP_USER,
   SMTP_PASS,
 
-  // Gmail fallback
   GMAIL_USER,
   GMAIL_APP_PASSWORD,
 
@@ -54,7 +54,7 @@ const {
   PUBLIC_BASE_URL,
 } = process.env;
 
-const JWT_SECRET = String(JWT_SECRET_RAW || "").replace(/\s+/g, ""); // ✅ removes accidental newline
+const JWT_SECRET = String(JWT_SECRET_RAW || "").replace(/\s+/g, "");
 
 if (!MONGODB_URI) {
   console.error("❌ Missing MONGODB_URI");
@@ -79,7 +79,6 @@ app.use(
 );
 app.options(/.*/, cors());
 
-// Body parsers
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
@@ -87,13 +86,11 @@ app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-// Static serving for uploaded images
 app.use(
   "/uploads",
   express.static(UPLOAD_DIR, {
     maxAge: "7d",
     setHeaders: (res) => {
-      // ✅ helps mobile browsers load external images reliably
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
       res.setHeader("Cache-Control", "public, max-age=604800");
@@ -134,15 +131,15 @@ const productSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
   {
-    orderId: { type: String, required: true, unique: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "FashionUser", required: true },
+    orderId: { type: String, required: true, unique: true, index: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "FashionUser", required: true, index: true },
     items: [
       {
         productId: { type: String, required: true },
         name: { type: String, required: true },
         price: { type: Number, required: true },
         qty: { type: Number, required: true },
-        image: { type: String, default: "" }, // absolute URL preferred
+        image: { type: String, default: "" },
       },
     ],
     total: { type: Number, required: true },
@@ -159,7 +156,7 @@ const orderSchema = new mongoose.Schema(
       method: { type: String, enum: ["cash", "card", "telebirr"], required: true },
       status: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
       telebirrRef: { type: String, default: "" },
-      proofUrl: { type: String, default: "" }, // absolute URL
+      proofUrl: { type: String, default: "" },
     },
     status: { type: String, enum: ["placed", "processing", "delivered", "cancelled"], default: "placed" },
   },
@@ -217,7 +214,7 @@ function requireAuth(req, res, next) {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded; // { userId, email }
     next();
-  } catch (e) {
+  } catch {
     return res.status(401).json({ error: "Invalid token" });
   }
 }
@@ -234,41 +231,54 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 6 * 1024 * 1024 }, // 6MB
+  limits: { fileSize: 6 * 1024 * 1024 },
   fileFilter: (_, file, cb) => {
     const ok = ["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.mimetype);
     cb(ok ? null : new Error("Only image files allowed (png/jpg/webp)"), ok);
   },
 });
 
-// ---------------- EMAIL (SMTP first, Gmail fallback) ----------------
+// ---------------- EMAIL (CACHED TRANSPORTER) ----------------
+let cachedTransporter = null;
+
 function getMailFrom() {
   const fromEmail = EMAIL_FROM || SMTP_USER || GMAIL_USER || "no-reply@sena-fashion.com";
   const fromName = EMAIL_FROM_NAME || "Sena Fashion";
   return `"${fromName}" <${fromEmail}>`;
 }
 
-async function createTransporter() {
-  // ✅ SMTP first (best for Render)
+async function getTransporterCached() {
+  if (cachedTransporter) return cachedTransporter;
+
   if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
     const secure = String(SMTP_SECURE || "").toLowerCase() === "true";
-    return nodemailer.createTransport({
+    cachedTransporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: Number(SMTP_PORT),
       secure,
       auth: { user: SMTP_USER, pass: SMTP_PASS },
     });
+    return cachedTransporter;
   }
 
-  // ✅ Gmail fallback
   if (GMAIL_USER && GMAIL_APP_PASSWORD) {
-    return nodemailer.createTransport({
+    cachedTransporter = nodemailer.createTransport({
       service: "gmail",
       auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
     });
+    return cachedTransporter;
   }
 
   return null;
+}
+
+function escapeHtml(str) {
+  return String(str || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function buildCustomerEmailHtml({ customerName, orderId, items, total, status, paymentStatus }) {
@@ -278,7 +288,7 @@ function buildCustomerEmailHtml({ customerName, orderId, items, total, status, p
       <tr>
         <td style="padding:10px;border-bottom:1px solid #eee;">${escapeHtml(it.name)}</td>
         <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${Number(it.qty || 0)}</td>
-        <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">$${Number(it.price || 0).toFixed(2)}</td>
+        <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">ETB ${Number(it.price || 0).toFixed(0)}</td>
       </tr>
     `
     )
@@ -309,8 +319,8 @@ function buildCustomerEmailHtml({ customerName, orderId, items, total, status, p
         <tfoot>
           <tr>
             <td colspan="2" style="padding:12px;text-align:right;border-top:1px solid #eee;"><b>Total</b></td>
-            <td style="padding:12px;text-align:right;border-top:1px solid #eee;"><b>$${Number(total || 0).toFixed(
-              2
+            <td style="padding:12px;text-align:right;border-top:1px solid #eee;"><b>ETB ${Number(total || 0).toFixed(
+              0
             )}</b></td>
           </tr>
         </tfoot>
@@ -327,37 +337,58 @@ function buildCustomerEmailHtml({ customerName, orderId, items, total, status, p
   </div>`;
 }
 
-function escapeHtml(str) {
-  return String(str || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+async function sendMail({ to, subject, html, text }) {
+  const transporter = await getTransporterCached();
+  if (!transporter) return { ok: false, skipped: true, message: "Email not configured." };
 
-async function sendCustomerEmail({ to, subject, html, text }) {
-  const transporter = await createTransporter();
-  if (!transporter) {
-    return { ok: false, skipped: true, message: "Email not configured (missing SMTP or Gmail env vars)." };
-  }
-
-  const mail = {
+  await transporter.sendMail({
     from: getMailFrom(),
     to,
     subject,
     text: text || "Sena Fashion — Order update",
     html,
     replyTo: OWNER_EMAIL || undefined,
-  };
+  });
 
-  await transporter.sendMail(mail);
   return { ok: true };
+}
+
+// ✅ Run async tasks without blocking responses
+function fireAndForget(fn) {
+  setImmediate(async () => {
+    try {
+      await fn();
+    } catch (e) {
+      // do not crash server on background errors
+      console.warn("⚠️ Background task failed:", e.message);
+    }
+  });
 }
 
 // ---------------- ROUTES ----------------
 app.get("/", (req, res) => {
   res.json({ ok: true, app: "Sena Fashion API", time: new Date().toISOString() });
+});
+
+// ✅ admin ping (frontend calls it)
+app.get("/api/admin/ping", requireAdmin, (req, res) => {
+  res.json({ ok: true, admin: true, time: new Date().toISOString() });
+});
+
+// ✅ admin test email (frontend calls it)
+app.get("/api/admin/test-email", requireAdmin, async (req, res) => {
+  try {
+    if (!OWNER_EMAIL) return res.status(400).json({ error: "Missing OWNER_EMAIL in env" });
+    const html = `<div style="font-family:Arial,sans-serif">
+      <h2>Sena Fashion — Test Email</h2>
+      <p>This is a test email from your Sena Fashion backend.</p>
+      <p><b>Time:</b> ${new Date().toISOString()}</p>
+    </div>`;
+    const result = await sendMail({ to: OWNER_EMAIL, subject: "Sena Fashion — Test Email", html, text: "Test email" });
+    res.json({ ok: true, result });
+  } catch (e) {
+    res.status(500).json({ error: "Test email failed", details: e.message });
+  }
 });
 
 // ---------- AUTH ----------
@@ -375,11 +406,7 @@ app.post("/api/auth/register", async (req, res) => {
 
     const token = jwt.sign({ userId: String(user._id), email: user.email }, JWT_SECRET, { expiresIn: "30d" });
 
-    res.json({
-      ok: true,
-      token,
-      user: { id: String(user._id), fullName: user.fullName, email: user.email },
-    });
+    res.json({ ok: true, token, user: { id: String(user._id), fullName: user.fullName, email: user.email } });
   } catch (e) {
     res.status(500).json({ error: "Register failed", details: e.message });
   }
@@ -399,11 +426,7 @@ app.post("/api/auth/login", async (req, res) => {
 
     const token = jwt.sign({ userId: String(user._id), email: user.email }, JWT_SECRET, { expiresIn: "30d" });
 
-    res.json({
-      ok: true,
-      token,
-      user: { id: String(user._id), fullName: user.fullName, email: user.email },
-    });
+    res.json({ ok: true, token, user: { id: String(user._id), fullName: user.fullName, email: user.email } });
   } catch (e) {
     res.status(500).json({ error: "Login failed", details: e.message });
   }
@@ -432,9 +455,7 @@ app.get("/api/products", async (req, res) => {
 // ---------- PRODUCTS (Admin CRUD) ----------
 app.post("/api/products", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    // Accepts: multipart/form-data OR JSON
     const body = req.body || {};
-
     const name = body.name;
     const description = body.description || "";
     const category = body.category;
@@ -499,15 +520,11 @@ app.delete("/api/products/:id", requireAdmin, async (req, res) => {
   }
 });
 
-// ---------- ORDERS (Customer places order) ----------
-// Supports JSON OR FormData.
-// If FormData, items can be sent as `items` (JSON string) + customer fields.
-// Optional upload: `proof` image for telebirr proof.
+// ---------- ORDERS (FAST) ----------
 app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // ✅ FormData or JSON
     const rawItems = req.body.items ?? req.body.cartItems ?? req.body.cart ?? null;
     const items = safeJsonParse(rawItems, Array.isArray(rawItems) ? rawItems : []);
 
@@ -539,17 +556,11 @@ app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) =>
     if (!["cash", "card", "telebirr"].includes(payment.method)) {
       return res.status(400).json({ error: "Invalid payment.method" });
     }
-    if (!["pending", "paid", "failed"].includes(payment.status)) {
-      payment.status = "pending";
-    }
+    if (!["pending", "paid", "failed"].includes(payment.status)) payment.status = "pending";
 
-    if (req.file) {
-      payment.proofUrl = toAbsoluteUrl(req, `/uploads/${req.file.filename}`);
-    } else if (payment.proofUrl) {
-      payment.proofUrl = toAbsoluteUrl(req, payment.proofUrl);
-    }
+    if (req.file) payment.proofUrl = toAbsoluteUrl(req, `/uploads/${req.file.filename}`);
+    else if (payment.proofUrl) payment.proofUrl = toAbsoluteUrl(req, payment.proofUrl);
 
-    // Normalize items
     const cleanItems = items.map((it) => ({
       productId: String(it.productId || it.id || it._id || ""),
       name: String(it.name || ""),
@@ -593,9 +604,12 @@ app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) =>
       status: "placed",
     });
 
-    // Optional: email owner on new order (if configured)
+    // ✅ IMPORTANT: respond IMMEDIATELY (FAST)
+    res.json({ ok: true, order });
+
+    // ✅ background email (DO NOT block checkout)
     if (OWNER_EMAIL) {
-      try {
+      fireAndForget(async () => {
         const html = buildCustomerEmailHtml({
           customerName: "Owner",
           orderId: order.orderId,
@@ -604,18 +618,14 @@ app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) =>
           status: order.status,
           paymentStatus: order.payment.status,
         });
-        await sendCustomerEmail({
+        await sendMail({
           to: OWNER_EMAIL,
           subject: `New Order ${order.orderId} — Sena Fashion`,
           html,
-          text: `New order ${order.orderId} total $${order.total}`,
+          text: `New order ${order.orderId} total ETB ${order.total}`,
         });
-      } catch (_) {
-        // don't fail order if email fails
-      }
+      });
     }
-
-    res.json({ ok: true, order });
   } catch (e) {
     res.status(500).json({ error: "Failed to place order", details: e.message });
   }
@@ -649,13 +659,9 @@ app.put("/api/admin/orders/:orderId", requireAdmin, async (req, res) => {
     const { status, paymentStatus, telebirrRef, proofUrl } = req.body || {};
 
     const patch = {};
-    if (status && ["placed", "processing", "delivered", "cancelled"].includes(status)) {
-      patch.status = status;
-    }
+    if (status && ["placed", "processing", "delivered", "cancelled"].includes(status)) patch.status = status;
+    if (paymentStatus && ["pending", "paid", "failed"].includes(paymentStatus)) patch["payment.status"] = paymentStatus;
 
-    if (paymentStatus && ["pending", "paid", "failed"].includes(paymentStatus)) {
-      patch["payment.status"] = paymentStatus;
-    }
     if (telebirrRef != null) patch["payment.telebirrRef"] = String(telebirrRef || "");
     if (proofUrl != null) patch["payment.proofUrl"] = String(proofUrl || "");
 
@@ -680,9 +686,11 @@ app.post("/api/admin/orders/:orderId/email", requireAdmin, async (req, res) => {
     const to = String(order.customer?.email || "").trim();
     if (!to) return res.status(400).json({ error: "Customer email not found for this order" });
 
-    const niceSubject = subject && String(subject).trim() ? String(subject).trim() : `Your Order ${order.orderId} — Update`;
+    const niceSubject =
+      subject && String(subject).trim() ? String(subject).trim() : `Your Order ${order.orderId} — Update`;
 
     const extraMsg = message && String(message).trim() ? String(message).trim() : "";
+
     const html = `
       ${buildCustomerEmailHtml({
         customerName: order.customer?.fullName,
@@ -695,16 +703,16 @@ app.post("/api/admin/orders/:orderId/email", requireAdmin, async (req, res) => {
       ${
         extraMsg
           ? `<div style="max-width:650px;margin:12px auto 0;padding:0 18px;">
-               <div style="border:1px solid #eee;border-radius:12px;padding:12px;font-family:Arial,Helvetica,sans-serif;color:#111;">
-                 <b>Message from Sena Fashion:</b>
-                 <div style="margin-top:8px;color:#333;white-space:pre-wrap;">${escapeHtml(extraMsg)}</div>
-               </div>
-             </div>`
+              <div style="border:1px solid #eee;border-radius:12px;padding:12px;font-family:Arial,Helvetica,sans-serif;color:#111;">
+                <b>Message from Sena Fashion:</b>
+                <div style="margin-top:8px;color:#333;white-space:pre-wrap;">${escapeHtml(extraMsg)}</div>
+              </div>
+            </div>`
           : ""
       }
     `;
 
-    const result = await sendCustomerEmail({
+    const result = await sendMail({
       to,
       subject: niceSubject,
       html,
@@ -718,6 +726,10 @@ app.post("/api/admin/orders/:orderId/email", requireAdmin, async (req, res) => {
 });
 
 // ---------------- START ----------------
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`✅ Sena Fashion backend running on port ${PORT}`);
 });
+
+// ✅ avoid stuck sockets on proxies
+server.keepAliveTimeout = 65 * 1000;
+server.headersTimeout = 70 * 1000;

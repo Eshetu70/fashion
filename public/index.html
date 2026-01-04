@@ -1,3 +1,12 @@
+<!-- index.html ✅ FULL UPDATED FRONTEND (Sena Fashion) — FAST UX/UI FIX
+  Fixes your issue:
+  ✅ Place Order no longer “keeps rotating” forever (adds request timeout + safe cleanup)
+  ✅ Cart clears immediately after SUCCESS (and UI count updates)
+  ✅ Prevents double-click / duplicate orders (locks button while sending)
+  ✅ Better error messages + always hides loading overlay
+  ✅ Uses JSON (faster) when no Telebirr proof; uses FormData only when proof exists
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -292,7 +301,6 @@
       overflow:hidden;
       position:relative;
 
-      /* ✅ mobile “black image” fixes */
       backface-visibility:hidden;
       -webkit-backface-visibility:hidden;
       transform: translateZ(0);
@@ -305,7 +313,6 @@
       display:block;
       background:rgba(255,255,255,.04);
 
-      /* iOS/Safari */
       backface-visibility:hidden;
       -webkit-backface-visibility:hidden;
       transform: translateZ(0);
@@ -567,6 +574,15 @@
       margin-right:10px;
     }
     @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Tiny inline spinner */
+    .miniSpin{
+      width:16px;height:16px;border-radius:999px;
+      border:2px solid rgba(255,255,255,.22);
+      border-top-color: rgba(255,255,255,.92);
+      animation: spin .8s linear infinite;
+      display:inline-block;
+    }
   </style>
 </head>
 
@@ -580,6 +596,9 @@
           <div style="font-weight:1000" id="loadingTitle">Processing...</div>
           <div class="sub" id="loadingText">Please wait.</div>
         </div>
+      </div>
+      <div class="sub" style="margin-top:10px">
+        If it takes more than 20 seconds, your network may be slow. We will show a clear error message.
       </div>
     </div>
   </div>
@@ -749,6 +768,7 @@
           </div>
           <div class="actions">
             <button class="btn btn-ghost" onclick="showShop()">Back to Shop</button>
+            <button class="btn btn-primary" onclick="loadMyOrders()">Refresh</button>
           </div>
         </div>
         <div id="ordersList"></div>
@@ -767,9 +787,7 @@
           </div>
           <div class="actions">
             <button class="btn btn-ghost" onclick="setAdminKey()">Set Admin Key</button>
-            <button class="btn btn-ghost" onclick="testAdminKey()">Test Admin</button>
             <button class="btn btn-ghost" onclick="logoutAdmin()">Logout Admin</button>
-            <button class="btn btn-ghost" onclick="testEmail()">Test Email</button>
             <button class="btn btn-primary" onclick="loadAdminOrders()">Refresh Orders</button>
           </div>
         </div>
@@ -941,7 +959,9 @@
       </div>
 
       <div class="actions" style="margin-top:12px">
-        <button class="btn btn-primary" onclick="placeOrder()">Place Order</button>
+        <button class="btn btn-primary" id="placeOrderBtn" onclick="placeOrder()">
+          <span id="placeOrderBtnText">Place Order</span>
+        </button>
         <button class="btn btn-ghost" onclick="closeCheckout()">Cancel</button>
       </div>
 
@@ -1035,6 +1055,7 @@
     let products = [];
     let currentCategory = "all";
     let cart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+    let placingOrder = false; // ✅ prevents duplicate clicks
 
     // ---------- DOM HELP ----------
     const $ = (id) => document.getElementById(id);
@@ -1048,6 +1069,7 @@
         .replaceAll("'","&#039;");
     }
     function money(n){ return (Number(n)||0).toFixed(0); }
+
     async function readJsonSafe(res){
       const text = await res.text();
       try { return { text, json: JSON.parse(text) }; } catch { return { text, json: null }; }
@@ -1081,7 +1103,7 @@
       if(timeout) setTimeout(()=>{ if(t.isConnected) t.remove(); }, timeout);
     }
 
-    // ---------- TOKEN (FIX INVALID TOKEN) ----------
+    // ---------- TOKEN ----------
     function getToken(){
       let t = localStorage.getItem(AUTH_TOKEN_KEY) || "";
       t = String(t).trim();
@@ -1093,12 +1115,29 @@
     function setToken(t){ localStorage.setItem(AUTH_TOKEN_KEY, String(t||"").trim()); }
     function clearToken(){ localStorage.removeItem(AUTH_TOKEN_KEY); }
 
-    async function apiFetch(url, options = {}){
+    // ---------- FAST FETCH WITH TIMEOUT ----------
+    async function fetchWithTimeout(url, options={}, timeoutMs=20000){
+      const controller = new AbortController();
+      const t = setTimeout(()=>controller.abort(), timeoutMs);
+      try{
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        return res;
+      }catch(e){
+        if(e && e.name === "AbortError"){
+          throw new Error("Request timed out. Please try again (slow network/server).");
+        }
+        throw e;
+      }finally{
+        clearTimeout(t);
+      }
+    }
+
+    async function apiFetch(url, options = {}, timeoutMs=20000){
       const token = getToken();
       const headers = new Headers(options.headers || {});
       if(token) headers.set("Authorization","Bearer " + token);
 
-      const res = await fetch(url, { ...options, headers });
+      const res = await fetchWithTimeout(url, { ...options, headers }, timeoutMs);
 
       if(res.status === 401){
         const body = await res.text().catch(()=> "");
@@ -1174,11 +1213,11 @@
 
       try{
         showLoading("Creating account...","Please wait.");
-        const res = await fetch(API_BASE + "/api/auth/register",{
+        const res = await fetchWithTimeout(API_BASE + "/api/auth/register",{
           method:"POST",
           headers:{ "Content-Type":"application/json" },
           body: JSON.stringify({ fullName, email, password })
-        });
+        }, 20000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Register failed");
 
@@ -1200,11 +1239,11 @@
 
       try{
         showLoading("Signing in...","Please wait.");
-        const res = await fetch(API_BASE + "/api/auth/login",{
+        const res = await fetchWithTimeout(API_BASE + "/api/auth/login",{
           method:"POST",
           headers:{ "Content-Type":"application/json" },
           body: JSON.stringify({ email, password })
-        });
+        }, 20000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Login failed");
 
@@ -1277,13 +1316,10 @@
     async function loadProducts(){
       $("shopHint").textContent = "Loading products...";
       try{
-        const res = await fetch(API_BASE + "/api/products", { cache:"no-store" });
+        const res = await fetchWithTimeout(API_BASE + "/api/products", { cache:"no-store" }, 20000);
         const data = await res.json();
 
-        // ✅ backend returns { ok:true, products:[...] }
         const raw = Array.isArray(data) ? data : (data.products || []);
-
-        // ✅ normalize Mongo _id => id
         products = raw.map(p => ({
           ...p,
           id: p.id || p._id,
@@ -1296,12 +1332,11 @@
         renderProducts();
         renderAdminProducts();
       }catch(e){
-        $("shopHint").textContent = "Failed to load products.";
+        $("shopHint").textContent = "Failed to load products. Please refresh.";
         console.error(e);
       }
     }
 
-    // ✅ safe image tag (fix mobile black image + CORS)
     function imgTag(url, alt){
       const safe = String(url || "").trim();
       if(!safe) return "";
@@ -1457,7 +1492,20 @@
       $("cardFields").classList.toggle("hidden", m !== "card");
     }
 
+    function setPlaceOrderBtnBusy(busy){
+      const btn = $("placeOrderBtn");
+      const t = $("placeOrderBtnText");
+      btn.disabled = !!busy;
+      if(busy){
+        t.innerHTML = `<span class="miniSpin"></span> Placing...`;
+      }else{
+        t.textContent = "Place Order";
+      }
+    }
+
+    // ✅ MAIN FIX: fast + safe checkout (timeout + always cleanup + clear cart on success)
     async function placeOrder(){
+      if(placingOrder) return; // prevent duplicates
       $("checkoutMsg").textContent = "";
 
       const fullName = $("ckName").value.trim();
@@ -1476,50 +1524,87 @@
       if(!email) return $("checkoutMsg").textContent = "Email is required (for updates).";
       if(!address) return $("checkoutMsg").textContent = "Address is required.";
 
-      const fd = new FormData();
-      fd.append("items", JSON.stringify(cart.map(it => ({
+      if(paymentMethod === "telebirr" && proof && proof.size > 3*1024*1024){
+        return $("checkoutMsg").textContent = "Telebirr proof max 3MB.";
+      }
+
+      // Build items payload (small & clean)
+      const itemsPayload = cart.map(it => ({
         productId: it.productId,
         name: it.name,
         price: it.price,
         qty: it.qty,
         image: it.image || ""
-      }))));
+      }));
 
-      fd.append("fullName", fullName);
-      fd.append("phone", phone);
-      fd.append("email", email);
-      fd.append("city", city);
-      fd.append("address", address);
-      fd.append("country", country);
-      fd.append("notes", notes);
-      fd.append("paymentMethod", paymentMethod);
-      fd.append("telebirrRef", telebirrRef);
-
-      // ✅ IMPORTANT: backend expects upload.single("proof")
-      if(proof) fd.append("proof", proof);
+      placingOrder = true;
+      setPlaceOrderBtnBusy(true);
 
       try{
         showLoading("Placing order...","Please wait while we confirm your order.");
-        const res = await apiFetch(API_BASE + "/api/orders",{
-          method:"POST",
-          body: fd
-        });
-        const { text, json } = await readJsonSafe(res);
-        if(!res.ok) throw new Error(json?.error || json?.details || text || "Order failed");
 
-        const orderId = json?.order?.orderId || "";
-        toast("Order placed successfully", `Order ID: ${orderId}\nThank you for shopping with Sena Fashion!`, "success", 6000);
+        let res, bodyText, bodyJson;
 
+        // ✅ Faster: JSON if no file. FormData only if proof exists.
+        if(paymentMethod === "telebirr" && proof){
+          const fd = new FormData();
+          fd.append("items", JSON.stringify(itemsPayload));
+          fd.append("fullName", fullName);
+          fd.append("phone", phone);
+          fd.append("email", email);
+          fd.append("city", city);
+          fd.append("address", address);
+          fd.append("country", country);
+          fd.append("notes", notes);
+          fd.append("paymentMethod", paymentMethod);
+          fd.append("telebirrRef", telebirrRef);
+          fd.append("proof", proof); // backend upload.single("proof")
+
+          res = await apiFetch(API_BASE + "/api/orders", { method:"POST", body: fd }, 25000);
+          ({ text: bodyText, json: bodyJson } = await readJsonSafe(res));
+        } else {
+          res = await apiFetch(API_BASE + "/api/orders", {
+            method:"POST",
+            headers: { "Content-Type":"application/json" },
+            body: JSON.stringify({
+              items: itemsPayload,
+              fullName, phone, email, city, address, country, notes,
+              paymentMethod,
+              telebirrRef
+            })
+          }, 25000);
+          ({ text: bodyText, json: bodyJson } = await readJsonSafe(res));
+        }
+
+        if(!res.ok){
+          throw new Error(bodyJson?.error || bodyJson?.details || bodyText || "Order failed");
+        }
+
+        const orderId = bodyJson?.order?.orderId || "";
+        toast("Order placed successfully", `Order ID: ${orderId}\nThank you for shopping with Sena Fashion!`, "success", 6500);
+
+        // ✅ CLEAR CART + UI immediately
         cart = [];
         saveCart();
+        renderCart();
+
+        // ✅ reset checkout (prevents “busy” state)
+        $("ckTeleRef").value = "";
+        $("ckProof").value = "";
+
         closeCheckout();
         closeCart();
+
+        // ✅ show orders (non-blocking)
         openOrders();
+
       }catch(e){
-        $("checkoutMsg").textContent = e.message;
-        toast("Order failed", e.message, "error");
+        $("checkoutMsg").textContent = e.message || "Order failed.";
+        toast("Order failed", e.message || "Order failed.", "error");
       }finally{
         hideLoading();
+        placingOrder = false;
+        setPlaceOrderBtnBusy(false);
       }
     }
 
@@ -1528,7 +1613,7 @@
       const box = $("ordersList");
       box.innerHTML = `<div class="empty">Loading...</div>`;
       try{
-        const res = await apiFetch(API_BASE + "/api/orders/my");
+        const res = await apiFetch(API_BASE + "/api/orders/my", {}, 20000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to load orders");
 
@@ -1572,7 +1657,7 @@
       }
     }
 
-    // ---------- ADMIN AUTH ----------
+    // ---------- ADMIN ----------
     const getAdminKey = ()=> localStorage.getItem(ADMIN_KEY_STORAGE) || "";
     function setAdminKey(){
       const k = prompt("Enter ADMIN_API_KEY:");
@@ -1585,37 +1670,6 @@
       localStorage.removeItem(ADMIN_KEY_STORAGE);
       toast("Admin logged out","Admin key removed from this device.");
       loadAdminOrders();
-    }
-    async function testAdminKey(){
-      const k = getAdminKey();
-      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
-      try{
-        showLoading("Testing admin key...","Please wait.");
-        const res = await fetch(API_BASE + "/api/admin/ping",{ headers:{ "x-admin-key": k } });
-        const { text, json } = await readJsonSafe(res);
-        if(!res.ok) throw new Error(json?.error || json?.details || text || "Admin ping failed");
-        toast("Admin OK","Your admin key is valid.");
-      }catch(e){
-        toast("Admin failed", e.message, "error");
-      }finally{
-        hideLoading();
-      }
-    }
-
-    async function testEmail(){
-      const k = getAdminKey();
-      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
-      try{
-        showLoading("Testing email...","Sending a test email from hosted backend.");
-        const res = await fetch(API_BASE + "/api/admin/test-email", { headers:{ "x-admin-key": k } });
-        const { text, json } = await readJsonSafe(res);
-        if(!res.ok) throw new Error(json?.error || json?.details || text || "Test email failed");
-        toast("Email OK","Test email sent. Check your inbox.");
-      }catch(e){
-        toast("Email test failed", e.message, "error");
-      }finally{
-        hideLoading();
-      }
     }
 
     // ---------- ADMIN PRODUCTS ----------
@@ -1673,11 +1727,11 @@
 
       try{
         showLoading("Uploading product...","Please wait.");
-        const res = await fetch(API_BASE + "/api/products",{
+        const res = await fetchWithTimeout(API_BASE + "/api/products",{
           method:"POST",
           headers:{ "x-admin-key": adminKey },
           body: fd
-        });
+        }, 25000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to add product");
 
@@ -1755,11 +1809,11 @@
 
       try{
         showLoading("Saving changes...","Please wait.");
-        const res = await fetch(API_BASE + "/api/products/" + encodeURIComponent(id),{
+        const res = await fetchWithTimeout(API_BASE + "/api/products/" + encodeURIComponent(id),{
           method:"PUT",
           headers:{ "x-admin-key": adminKey },
           body: fd
-        });
+        }, 25000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Update failed");
 
@@ -1781,10 +1835,10 @@
 
       try{
         showLoading("Deleting product...","Please wait.");
-        const res = await fetch(API_BASE + "/api/products/" + encodeURIComponent(id),{
+        const res = await fetchWithTimeout(API_BASE + "/api/products/" + encodeURIComponent(id),{
           method:"DELETE",
           headers:{ "x-admin-key": adminKey }
-        });
+        }, 20000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Delete failed");
         await loadProducts();
@@ -1807,12 +1861,11 @@
       box.innerHTML = `<div class="empty">Loading orders...</div>`;
 
       try{
-        const res = await fetch(API_BASE + "/api/admin/orders",{ headers:{ "x-admin-key": k } });
+        const res = await fetchWithTimeout(API_BASE + "/api/admin/orders",{ headers:{ "x-admin-key": k } }, 25000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to load admin orders");
 
         const orders = Array.isArray(json) ? json : (json.orders || []);
-
         if(orders.length === 0){
           box.innerHTML = `<div class="empty">No orders yet.</div>`;
           return;
@@ -1897,14 +1950,14 @@
 
       try{
         showLoading("Updating order...","Please wait.");
-        const res = await fetch(API_BASE + "/api/admin/orders/" + encodeURIComponent(orderId),{
+        const res = await fetchWithTimeout(API_BASE + "/api/admin/orders/" + encodeURIComponent(orderId),{
           method:"PUT",
           headers:{
             "Content-Type":"application/json",
             "x-admin-key": k
           },
           body: JSON.stringify({ status, paymentStatus })
-        });
+        }, 20000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Update failed");
         msg.textContent = "✅ Updated successfully.";
@@ -1919,7 +1972,7 @@
     }
 
     function openMail(orderId, orderIdText, status, payStatus){
-      $("mailDbId").value = orderId; // ✅ store orderId (backend route expects orderId)
+      $("mailDbId").value = orderId;
       $("mailMsg").textContent = "";
       $("mailSubject").value = `Sena Fashion — Order Update (${orderIdText})`;
       $("mailMessage").value =
@@ -1944,7 +1997,7 @@ Sena Fashion Support Team`;
       const k = getAdminKey();
       if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
 
-      const orderId = $("mailDbId").value; // ✅ orderId
+      const orderId = $("mailDbId").value;
       const subject = $("mailSubject").value.trim();
       const message = $("mailMessage").value.trim();
 
@@ -1952,14 +2005,14 @@ Sena Fashion Support Team`;
 
       try{
         showLoading("Sending email...","Please wait.");
-        const res = await fetch(API_BASE + "/api/admin/orders/" + encodeURIComponent(orderId) + "/email",{
+        const res = await fetchWithTimeout(API_BASE + "/api/admin/orders/" + encodeURIComponent(orderId) + "/email",{
           method:"POST",
           headers:{
             "Content-Type":"application/json",
             "x-admin-key": k
           },
           body: JSON.stringify({ subject, message })
-        });
+        }, 25000);
         const { text, json } = await readJsonSafe(res);
         if(!res.ok) throw new Error(json?.error || json?.details || text || "Email failed");
         $("mailMsg").textContent = "✅ Email sent successfully.";
