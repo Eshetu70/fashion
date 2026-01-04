@@ -1,18 +1,11 @@
 /**
- * server.js ✅ FULL UPDATED (Sena Fashion) — 2026-01-04 FAST FIX
- * - MongoDB (products, users, orders)
- * - Products CRUD (Admin key)
- * - Auth (register/login) JWT
- * - Orders (FormData OR JSON)
- * - Customer: My Orders
- * - Admin: View ALL orders, Update Status/Payment, Email customer
- * ✅ SPEED FIX:
- *    - Order response returns immediately
- *    - Email is sent in background (no await)
- *    - Transporter is cached (no recreate each request)
- * ✅ Adds:
- *    - /api/admin/ping
- *    - /api/admin/test-email
+ * server.js ✅ FULL UPDATED (Sena Fashion) — 2026-01-04 FIXED
+ * Fixes:
+ * ✅ JWT_SECRET newline / double-line issues on Render (sanitized)
+ * ✅ Checkout spinning / slow response (email sent async, not blocking order)
+ * ✅ Adds missing routes your frontend calls: /api/admin/ping, /api/admin/test-email
+ * ✅ CORS allow GitHub Pages + local + Render
+ * ✅ Uploads + absolute URL helpers
  *
  * npm i express cors mongoose multer bcryptjs jsonwebtoken nodemailer dotenv
  */
@@ -37,14 +30,17 @@ const {
   PORT = 3000,
   MONGODB_URI,
   ADMIN_API_KEY,
+
   JWT_SECRET: JWT_SECRET_RAW,
 
+  // SMTP (recommended)
   SMTP_HOST,
   SMTP_PORT,
   SMTP_SECURE,
   SMTP_USER,
   SMTP_PASS,
 
+  // Gmail fallback
   GMAIL_USER,
   GMAIL_APP_PASSWORD,
 
@@ -52,9 +48,17 @@ const {
   EMAIL_FROM_NAME,
   OWNER_EMAIL,
   PUBLIC_BASE_URL,
+
+  // Optional: set your GitHub pages origin explicitly
+  GITHUB_PAGES_ORIGIN, // e.g. https://eshetu70.github.io
 } = process.env;
 
-const JWT_SECRET = String(JWT_SECRET_RAW || "").replace(/\s+/g, "");
+// ✅ Hard-fix: Render paste/newline/space issues
+const JWT_SECRET = String(JWT_SECRET_RAW || "")
+  .replace(/\s+/g, "") // removes ALL whitespace: spaces/newlines/tabs
+  .trim();
+
+console.log("🔐 JWT_SECRET length:", JWT_SECRET.length);
 
 if (!MONGODB_URI) {
   console.error("❌ Missing MONGODB_URI");
@@ -64,21 +68,38 @@ if (!ADMIN_API_KEY) {
   console.error("❌ Missing ADMIN_API_KEY");
   process.exit(1);
 }
-if (!JWT_SECRET) {
-  console.error("❌ Missing JWT_SECRET (must be ONE LINE)");
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error("❌ Missing/weak JWT_SECRET (must be ONE LINE, 32+ chars)");
   process.exit(1);
 }
 
-// ---------------- CORS ----------------
+// ---------------- CORS (GitHub Pages + local + Render) ----------------
+// You can add more origins here if needed.
+const allowedOrigins = [
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "https://eshetu70.github.io", // your common GitHub pages
+].filter(Boolean);
+
+if (GITHUB_PAGES_ORIGIN) allowedOrigins.push(String(GITHUB_PAGES_ORIGIN).trim());
+
 app.use(
   cors({
-    origin: "*",
+    origin: (origin, cb) => {
+      // allow no-origin requests (Postman/server-to-server)
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("CORS blocked: " + origin));
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-admin-key"],
   })
 );
 app.options(/.*/, cors());
 
+// Body parsers
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
@@ -100,7 +121,10 @@ app.use(
 
 // ---------------- MONGO ----------------
 mongoose
-  .connect(MONGODB_URI)
+  .connect(MONGODB_URI, {
+    // keeps Render stable
+    serverSelectionTimeoutMS: 10000,
+  })
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => {
     console.error("❌ MongoDB error:", err.message);
@@ -174,7 +198,6 @@ function baseUrlFromReq(req) {
   const host = req.get("host");
   return `${proto}://${host}`;
 }
-
 function toAbsoluteUrl(req, maybeUrlOrPath) {
   if (!maybeUrlOrPath) return "";
   const v = String(maybeUrlOrPath);
@@ -183,7 +206,6 @@ function toAbsoluteUrl(req, maybeUrlOrPath) {
   if (v.startsWith("/")) return `${base}${v}`;
   return `${base}/${v}`;
 }
-
 function safeJsonParse(input, fallback) {
   try {
     if (typeof input === "string") return JSON.parse(input);
@@ -192,29 +214,33 @@ function safeJsonParse(input, fallback) {
     return fallback;
   }
 }
-
 function makeOrderId() {
   return `SF-${Date.now()}-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
+}
+function escapeHtml(str) {
+  return String(str || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function requireAdmin(req, res, next) {
   const key = req.headers["x-admin-key"];
-  if (!key || key !== ADMIN_API_KEY) {
-    return res.status(401).json({ error: "Unauthorized (admin key required)" });
-  }
+  if (!key || key !== ADMIN_API_KEY) return res.status(401).json({ error: "Unauthorized (admin key required)" });
   next();
 }
-
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token) return res.status(401).json({ error: "Missing token" });
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // { userId, email }
+    const decoded = jwt.verify(String(token).trim(), JWT_SECRET);
+    req.user = decoded;
     next();
-  } catch {
+  } catch (e) {
     return res.status(401).json({ error: "Invalid token" });
   }
 }
@@ -238,47 +264,32 @@ const upload = multer({
   },
 });
 
-// ---------------- EMAIL (CACHED TRANSPORTER) ----------------
-let cachedTransporter = null;
-
+// ---------------- EMAIL ----------------
 function getMailFrom() {
   const fromEmail = EMAIL_FROM || SMTP_USER || GMAIL_USER || "no-reply@sena-fashion.com";
   const fromName = EMAIL_FROM_NAME || "Sena Fashion";
   return `"${fromName}" <${fromEmail}>`;
 }
 
-async function getTransporterCached() {
-  if (cachedTransporter) return cachedTransporter;
-
+async function createTransporter() {
   if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
     const secure = String(SMTP_SECURE || "").toLowerCase() === "true";
-    cachedTransporter = nodemailer.createTransport({
+    return nodemailer.createTransport({
       host: SMTP_HOST,
       port: Number(SMTP_PORT),
       secure,
       auth: { user: SMTP_USER, pass: SMTP_PASS },
     });
-    return cachedTransporter;
   }
 
   if (GMAIL_USER && GMAIL_APP_PASSWORD) {
-    cachedTransporter = nodemailer.createTransport({
+    return nodemailer.createTransport({
       service: "gmail",
       auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
     });
-    return cachedTransporter;
   }
 
   return null;
-}
-
-function escapeHtml(str) {
-  return String(str || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 function buildCustomerEmailHtml({ customerName, orderId, items, total, status, paymentStatus }) {
@@ -319,9 +330,7 @@ function buildCustomerEmailHtml({ customerName, orderId, items, total, status, p
         <tfoot>
           <tr>
             <td colspan="2" style="padding:12px;text-align:right;border-top:1px solid #eee;"><b>Total</b></td>
-            <td style="padding:12px;text-align:right;border-top:1px solid #eee;"><b>ETB ${Number(total || 0).toFixed(
-              0
-            )}</b></td>
+            <td style="padding:12px;text-align:right;border-top:1px solid #eee;"><b>ETB ${Number(total || 0).toFixed(0)}</b></td>
           </tr>
         </tfoot>
       </table>
@@ -337,30 +346,30 @@ function buildCustomerEmailHtml({ customerName, orderId, items, total, status, p
   </div>`;
 }
 
-async function sendMail({ to, subject, html, text }) {
-  const transporter = await getTransporterCached();
-  if (!transporter) return { ok: false, skipped: true, message: "Email not configured." };
-
-  await transporter.sendMail({
+async function sendCustomerEmail({ to, subject, html, text }) {
+  const transporter = await createTransporter();
+  if (!transporter) {
+    return { ok: false, skipped: true, message: "Email not configured (missing SMTP or Gmail env vars)." };
+  }
+  const mail = {
     from: getMailFrom(),
     to,
     subject,
     text: text || "Sena Fashion — Order update",
     html,
     replyTo: OWNER_EMAIL || undefined,
-  });
-
+  };
+  await transporter.sendMail(mail);
   return { ok: true };
 }
 
-// ✅ Run async tasks without blocking responses
-function fireAndForget(fn) {
+// ✅ Critical fix: email should never block API response
+function sendEmailInBackground(fn) {
   setImmediate(async () => {
     try {
       await fn();
     } catch (e) {
-      // do not crash server on background errors
-      console.warn("⚠️ Background task failed:", e.message);
+      console.warn("⚠️ Background email failed:", e.message);
     }
   });
 }
@@ -370,21 +379,33 @@ app.get("/", (req, res) => {
   res.json({ ok: true, app: "Sena Fashion API", time: new Date().toISOString() });
 });
 
-// ✅ admin ping (frontend calls it)
+// ✅ Used by your frontend "Test Admin"
 app.get("/api/admin/ping", requireAdmin, (req, res) => {
   res.json({ ok: true, admin: true, time: new Date().toISOString() });
 });
 
-// ✅ admin test email (frontend calls it)
+// ✅ Used by your frontend "Test Email"
 app.get("/api/admin/test-email", requireAdmin, async (req, res) => {
   try {
-    if (!OWNER_EMAIL) return res.status(400).json({ error: "Missing OWNER_EMAIL in env" });
-    const html = `<div style="font-family:Arial,sans-serif">
-      <h2>Sena Fashion — Test Email</h2>
-      <p>This is a test email from your Sena Fashion backend.</p>
-      <p><b>Time:</b> ${new Date().toISOString()}</p>
-    </div>`;
-    const result = await sendMail({ to: OWNER_EMAIL, subject: "Sena Fashion — Test Email", html, text: "Test email" });
+    if (!OWNER_EMAIL) return res.status(400).json({ error: "OWNER_EMAIL not set in env" });
+
+    const html = buildCustomerEmailHtml({
+      customerName: "Owner",
+      orderId: "SF-TEST-EMAIL",
+      items: [{ name: "Test Item", qty: 1, price: 1000 }],
+      total: 1000,
+      status: "placed",
+      paymentStatus: "pending",
+    });
+
+    const result = await sendCustomerEmail({
+      to: OWNER_EMAIL,
+      subject: "Sena Fashion — Test Email",
+      html,
+      text: "Test email from Sena Fashion backend.",
+    });
+
+    if (!result.ok && result.skipped) return res.status(400).json(result);
     res.json({ ok: true, result });
   } catch (e) {
     res.status(500).json({ error: "Test email failed", details: e.message });
@@ -425,14 +446,13 @@ app.post("/api/auth/login", async (req, res) => {
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 
     const token = jwt.sign({ userId: String(user._id), email: user.email }, JWT_SECRET, { expiresIn: "30d" });
-
     res.json({ ok: true, token, user: { id: String(user._id), fullName: user.fullName, email: user.email } });
   } catch (e) {
     res.status(500).json({ error: "Login failed", details: e.message });
   }
 });
 
-// ---------- PRODUCTS (Public list) ----------
+// ---------- PRODUCTS (Public) ----------
 app.get("/api/products", async (req, res) => {
   try {
     const { category, gender, q } = req.query || {};
@@ -520,7 +540,7 @@ app.delete("/api/products/:id", requireAdmin, async (req, res) => {
   }
 });
 
-// ---------- ORDERS (FAST) ----------
+// ---------- ORDERS (Customer places order) ----------
 app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -528,9 +548,7 @@ app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) =>
     const rawItems = req.body.items ?? req.body.cartItems ?? req.body.cart ?? null;
     const items = safeJsonParse(rawItems, Array.isArray(rawItems) ? rawItems : []);
 
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: "Cart items required" });
-    }
+    if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: "Cart items required" });
 
     const customer = safeJsonParse(req.body.customer, null) || {
       fullName: req.body.fullName || req.body.customerName || "",
@@ -553,9 +571,7 @@ app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) =>
       proofUrl: req.body.proofUrl || "",
     };
 
-    if (!["cash", "card", "telebirr"].includes(payment.method)) {
-      return res.status(400).json({ error: "Invalid payment.method" });
-    }
+    if (!["cash", "card", "telebirr"].includes(payment.method)) return res.status(400).json({ error: "Invalid payment.method" });
     if (!["pending", "paid", "failed"].includes(payment.status)) payment.status = "pending";
 
     if (req.file) payment.proofUrl = toAbsoluteUrl(req, `/uploads/${req.file.filename}`);
@@ -604,12 +620,12 @@ app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) =>
       status: "placed",
     });
 
-    // ✅ IMPORTANT: respond IMMEDIATELY (FAST)
-    res.json({ ok: true, order });
+    // ✅ Respond immediately (no waiting on email)
+    res.json({ ok: true, order: { orderId: order.orderId, total: order.total, status: order.status, createdAt: order.createdAt } });
 
-    // ✅ background email (DO NOT block checkout)
+    // ✅ Email owner in background (never blocks checkout)
     if (OWNER_EMAIL) {
-      fireAndForget(async () => {
+      sendEmailInBackground(async () => {
         const html = buildCustomerEmailHtml({
           customerName: "Owner",
           orderId: order.orderId,
@@ -618,7 +634,7 @@ app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) =>
           status: order.status,
           paymentStatus: order.payment.status,
         });
-        await sendMail({
+        await sendCustomerEmail({
           to: OWNER_EMAIL,
           subject: `New Order ${order.orderId} — Sena Fashion`,
           html,
@@ -661,7 +677,6 @@ app.put("/api/admin/orders/:orderId", requireAdmin, async (req, res) => {
     const patch = {};
     if (status && ["placed", "processing", "delivered", "cancelled"].includes(status)) patch.status = status;
     if (paymentStatus && ["pending", "paid", "failed"].includes(paymentStatus)) patch["payment.status"] = paymentStatus;
-
     if (telebirrRef != null) patch["payment.telebirrRef"] = String(telebirrRef || "");
     if (proofUrl != null) patch["payment.proofUrl"] = String(proofUrl || "");
 
@@ -686,9 +701,7 @@ app.post("/api/admin/orders/:orderId/email", requireAdmin, async (req, res) => {
     const to = String(order.customer?.email || "").trim();
     if (!to) return res.status(400).json({ error: "Customer email not found for this order" });
 
-    const niceSubject =
-      subject && String(subject).trim() ? String(subject).trim() : `Your Order ${order.orderId} — Update`;
-
+    const niceSubject = subject && String(subject).trim() ? String(subject).trim() : `Your Order ${order.orderId} — Update`;
     const extraMsg = message && String(message).trim() ? String(message).trim() : "";
 
     const html = `
@@ -712,13 +725,14 @@ app.post("/api/admin/orders/:orderId/email", requireAdmin, async (req, res) => {
       }
     `;
 
-    const result = await sendMail({
+    const result = await sendCustomerEmail({
       to,
       subject: niceSubject,
       html,
       text: `Order ${order.orderId} status: ${order.status}, payment: ${order.payment?.status}. ${extraMsg}`,
     });
 
+    if (!result.ok && result.skipped) return res.status(400).json(result);
     res.json({ ok: true, result });
   } catch (e) {
     res.status(500).json({ error: "Failed to email customer", details: e.message });
@@ -726,10 +740,6 @@ app.post("/api/admin/orders/:orderId/email", requireAdmin, async (req, res) => {
 });
 
 // ---------------- START ----------------
-const server = app.listen(PORT, () => {
+app.listen(Number(PORT), () => {
   console.log(`✅ Sena Fashion backend running on port ${PORT}`);
 });
-
-// ✅ avoid stuck sockets on proxies
-server.keepAliveTimeout = 65 * 1000;
-server.headersTimeout = 70 * 1000;
