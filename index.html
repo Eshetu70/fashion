@@ -8,7 +8,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
   <title>Sena Fashion — Professional Online Shopping</title>
@@ -19,47 +20,68 @@
 
   <!-- ✅ Theme / PWA -->
   <meta name="theme-color" content="#0b0f14" />
-  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="manifest" href="/assets/site.webmanifest" />
 
-  <!-- ✅ Favicons (assets-only setup) -->
-  <link rel="icon" href="/fashion/assets/favicon.ico" sizes="any">
-  <link rel="shortcut icon" href="/fashion/assets/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="/fashion/assets/favicon-32.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/fashion/assets/apple-touch-icon.png">
+  <!-- ✅ Favicons (ONE clean set only) -->
+  <link rel="icon" href="/assets/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
 
-
-  <link rel="icon" href="/assets/favicon.ico" sizes="any">
-<link rel="shortcut icon" href="/assets/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-<link rel="manifest" href="/assets/site.webmanifest">
-
-
-  <!-- ✅ Canonical (IMPORTANT for SEO) -->
-  <link rel="canonical" href="https://fashion-2tif.onrender.com/" />
+  <!-- ✅ Canonical (IMPORTANT: must be your PUBLIC domain) -->
+  <link rel="canonical" href="https://senafashions.com/" />
 
   <!-- ✅ Open Graph (Facebook, WhatsApp, iMessage, LinkedIn) -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Sena Fashion" />
   <meta property="og:title" content="Sena Fashion — Modern • Cultural • Premium" />
   <meta property="og:description" content="Shop premium styles with fast ordering, clean UI, and secure admin management." />
-  <meta property="og:url" content="https://fashion-2tif.onrender.com/" />
+  <meta property="og:url" content="https://senafashions.com/" />
 
-  <!-- MUST be absolute + publicly accessible -->
-  <meta property="og:image" content="https://fashion-2tif.onrender.com/assets/og-sena-fashion-1200x630.png" />
-  <meta property="og:image:secure_url" content="https://fashion-2tif.onrender.com/assets/og-sena-fashion-1200x630.png" />
-  <meta property="og:image:type" content="image/png" />
+  <!-- ✅ OG image MUST be absolute + publicly accessible -->
+  <meta property="og:image" content="https://senafashions.com/assets/og-sena-fashion-1200x630.jpg" />
+  <meta property="og:image:secure_url" content="https://senafashions.com/assets/og-sena-fashion-1200x630.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Sena Fashion — Modern • Cultural • Premium" />
 
   <!-- ✅ Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Sena Fashion — Professional Online Shopping" />
   <meta name="twitter:description" content="Modern + cultural fashion. Shop premium styles with fast ordering and secure admin management." />
-  <meta name="twitter:image" content="https://fashion-2tif.onrender.com/assets/og-sena-fashion-1200x630.png" />
+  <meta name="twitter:image" content="https://senafashions.com/assets/og-sena-fashion-1200x630.jpg" />
 
-  <!-- ✅ Optional: Better previews on some platforms -->
-  <meta property="og:image:alt" content="Sena Fashion — Modern • Cultural • Premium" />
+  <!-- ✅ Structured Data (helps Google understand your brand/logo) -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Organization",
+    "name":"Sena Fashion",
+    "url":"https://senafashions.com/",
+    "logo":"https://senafashions.com/assets/logo-512.png",
+    "image":"https://senafashions.com/assets/og-sena-fashion-1200x630.jpg",
+    "contactPoint":[{
+      "@type":"ContactPoint",
+      "contactType":"customer service",
+      "email":"senafikadu8@gmail.com",
+      "telephone":"+251943578957"
+    }]
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    "name":"Sena Fashion",
+    "url":"https://senafashions.com/"
+  }
+  </script>
+
+  <!-- ✅ Your existing <style> continues below -->
+  
+
+
 
   <style>
     :root{
