@@ -1,14 +1,8 @@
-<!-- index.html ✅ FULL UPDATED FRONTEND (Sena Fashion) — EMAIL FIX INCLUDED
-  ✅ Same UI/UX you posted
-  ✅ Adds the missing frontend changes so Email Customer works correctly with your Render backend:
-     - Pass customer email into openMail()
-     - Disable Send if customer email missing
-     - Show clear “Email not configured on server” message (Render env missing)
-     - Stronger error parsing + better feedback (timeouts, server errors)
-
-  ✅ Footer updated with:
-     Email: senafikadu8@gmail.com
-     Phone: +251943578957
+<!-- index.html ✅ FULL UPDATED FRONTEND (Sena Fashion) — ADMIN KEY REQUIRED + EMAIL FIX + FOOTER CONTACT
+  ✅ Admin dashboard is hidden until ADMIN_API_KEY is verified (real backend ping)
+  ✅ Admin buttons hidden until verified (desktop + mobile)
+  ✅ Email Customer fix included (passes customer email into openMail, disables send if missing, friendly Render env message)
+  ✅ Footer includes: senafikadu8@gmail.com / +251943578957
 -->
 
 <!DOCTYPE html>
@@ -553,23 +547,6 @@
       color:rgba(255,255,255,.7);
       text-align:center;
     }
-    .footerLinks{
-      margin-top:8px;
-      display:flex;
-      justify-content:center;
-      gap:14px;
-      flex-wrap:wrap;
-      font-weight:900;
-      color:rgba(255,255,255,.80);
-    }
-    .footerLinks a{
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.04);
-      padding:.45rem .7rem;
-      border-radius:999px;
-      transition:.15s;
-    }
-    .footerLinks a:hover{background:rgba(255,255,255,.06);transform:translateY(-1px)}
 
     /* Toast */
     .toastWrap{
@@ -681,7 +658,9 @@
         <div class="nav-right nav-desktop">
           <div class="pill" onclick="showShop()">🛍️ Shop</div>
           <div class="pill" onclick="openOrders()">📦 My Orders</div>
-          <div class="pill" onclick="openAdmin()">🛠️ Admin</div>
+
+          <!-- ✅ HIDDEN UNTIL ADMIN VERIFIED -->
+          <div class="pill hidden" id="adminBtn" onclick="openAdmin()">🛠️ Admin</div>
 
           <div class="pill" id="authPill" onclick="openAccount()">
             <span class="dot"></span>
@@ -730,7 +709,10 @@
       <div class="mLinks">
         <button class="mLink" onclick="toggleMobileMenu(false); showShop()">🛍️ Shop</button>
         <button class="mLink" onclick="toggleMobileMenu(false); openOrders()">📦 My Orders</button>
-        <button class="mLink" onclick="toggleMobileMenu(false); openAdmin()">🛠️ Admin</button>
+
+        <!-- ✅ HIDDEN UNTIL ADMIN VERIFIED -->
+        <button class="mLink hidden" id="adminBtnMobile" onclick="toggleMobileMenu(false); openAdmin()">🛠️ Admin</button>
+
         <button class="mLink" onclick="toggleMobileMenu(false); openCart()">🛒 Cart</button>
       </div>
 
@@ -752,6 +734,9 @@
           <div class="hero-actions">
             <button class="btn btn-primary" onclick="scrollToProducts()">Shop Now</button>
             <button class="btn btn-ghost" onclick="openCart()">View Cart</button>
+
+            <!-- ✅ ADMIN ACCESS FROM SHOP (will prompt for key) -->
+            <button class="btn btn-ghost" onclick="openAdmin()">Admin Access</button>
           </div>
         </div>
 
@@ -766,7 +751,7 @@
           </div>
           <div class="stat-row">
             <div class="label">Secure Admin</div>
-            <div class="value">Enabled ✅</div>
+            <div class="value">Key Required 🔒</div>
           </div>
         </div>
       </div>
@@ -1097,10 +1082,9 @@
   </div>
 
   <footer>
-    © <span id="yy"></span> Sena Fashion. All rights reserved.
-    <div class="footerLinks">
-      <a href="mailto:senafikadu8@gmail.com">📧 senafikadu8@gmail.com</a>
-      <a href="tel:+251943578957">📞 +251943578957</a>
+    <div>© <span id="yy"></span> Sena Fashion. All rights reserved.</div>
+    <div style="margin-top:6px;font-weight:900;color:rgba(255,255,255,.78)">
+      📧 senafikadu8@gmail.com &nbsp;|&nbsp; 📞 +251943578957
     </div>
   </footer>
 
@@ -1344,14 +1328,6 @@
         return;
       }
       loadMyOrders();
-    }
-    function openAdmin(){
-      $("shopView").classList.add("hidden");
-      $("ordersView").classList.add("hidden");
-      $("adminView").classList.remove("hidden");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      renderAdminProducts();
-      loadAdminOrders();
     }
 
     function scrollToProducts(){
@@ -1723,23 +1699,74 @@
     }
 
     // ---------- ADMIN ----------
-    const getAdminKey = ()=> localStorage.getItem(ADMIN_KEY_STORAGE) || "";
+    const getAdminKey = ()=> (localStorage.getItem(ADMIN_KEY_STORAGE) || "").trim();
+
+    function showAdminButtons(show){
+      $("adminBtn")?.classList.toggle("hidden", !show);
+      $("adminBtnMobile")?.classList.toggle("hidden", !show);
+    }
+
+    async function verifyAdminKey(){
+      const k = getAdminKey();
+      if(!k) throw new Error("Admin key missing");
+      const res = await fetchWithTimeout(API_BASE + "/api/admin/ping",{
+        headers:{ "x-admin-key": k }
+      }, 12000);
+      if(!res.ok) throw new Error("Invalid admin key");
+      return true;
+    }
+
+    async function openAdmin(){
+      // ✅ Force key before showing dashboard
+      let k = getAdminKey();
+      if(!k){
+        const entered = prompt("Admin only.\nEnter ADMIN_API_KEY:");
+        if(!entered) return;
+        localStorage.setItem(ADMIN_KEY_STORAGE, entered.trim());
+        k = getAdminKey();
+      }
+
+      try{
+        showLoading("Verifying admin...","Please wait.");
+        await verifyAdminKey();
+
+        showAdminButtons(true);
+
+        $("shopView").classList.add("hidden");
+        $("ordersView").classList.add("hidden");
+        $("adminView").classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        renderAdminProducts();
+        loadAdminOrders();
+        toast("Admin access granted","Dashboard unlocked.");
+      }catch(e){
+        localStorage.removeItem(ADMIN_KEY_STORAGE);
+        showAdminButtons(false);
+        toast("Access denied", e.message || "Invalid admin key", "error");
+      }finally{
+        hideLoading();
+      }
+    }
+
     function setAdminKey(){
       const k = prompt("Enter ADMIN_API_KEY:");
       if(!k) return;
       localStorage.setItem(ADMIN_KEY_STORAGE, k.trim());
-      toast("Admin key saved","Admin access enabled on this device.");
-      loadAdminOrders();
+      toast("Admin key saved","Now verifying...");
+      openAdmin(); // verify + open
     }
     function logoutAdmin(){
       localStorage.removeItem(ADMIN_KEY_STORAGE);
+      showAdminButtons(false);
       toast("Admin logged out","Admin key removed from this device.");
-      loadAdminOrders();
+      showShop();
     }
 
     // ---------- ADMIN PRODUCTS ----------
     function renderAdminProducts(){
       const list = $("productList");
+      if(!list) return;
       if(products.length === 0){
         list.innerHTML = `<div class="empty">No products yet.</div>`;
         return;
@@ -1773,7 +1800,7 @@
     $("productForm").addEventListener("submit", async (e)=>{
       e.preventDefault();
       const adminKey = getAdminKey();
-      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
+      if(!adminKey) return toast("Admin key missing","Click Admin Access and enter key first.","error");
 
       const file = $("imageInput").files[0];
       if(!file) return toast("Image required","Please select a product image.","error");
@@ -1818,6 +1845,7 @@
       }
     });
 
+    // ---------- EDIT PRODUCT ----------
     function openEdit(id){
       const p = products.find(x=> String(x.id)===String(id));
       if(!p) return toast("Not found","Product not found.","error");
@@ -1850,7 +1878,7 @@
 
     async function saveEdit(){
       const adminKey = getAdminKey();
-      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
+      if(!adminKey) return toast("Admin key missing","Enter admin key first.","error");
 
       const id = $("editId").value;
       const name = $("editName").value.trim();
@@ -1896,7 +1924,7 @@
     async function deleteProduct(id){
       if(!confirm("Delete this product?")) return;
       const adminKey = getAdminKey();
-      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
+      if(!adminKey) return toast("Admin key missing","Enter admin key first.","error");
 
       try{
         showLoading("Deleting product...","Please wait.");
@@ -1919,10 +1947,13 @@
     async function loadAdminOrders(){
       const k = getAdminKey();
       const box = $("adminOrders");
+      if(!box) return;
+
       if(!k){
-        box.innerHTML = `<div class="empty">Admin key not set. Click “Set Admin Key”.</div>`;
+        box.innerHTML = `<div class="empty">Admin key not set. Use “Admin Access” and enter key.</div>`;
         return;
       }
+
       box.innerHTML = `<div class="empty">Loading orders...</div>`;
 
       try{
@@ -2015,7 +2046,7 @@
 
     async function adminUpdateOrder(orderId, dbKey){
       const k = getAdminKey();
-      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
+      if(!k) return toast("Admin key missing","Enter admin key first.","error");
 
       const status = $("st_" + dbKey).value;
       const paymentStatus = $("pay_" + dbKey).value;
@@ -2083,7 +2114,7 @@ Sena Fashion Support Team`;
     // ✅ UPDATED: friendly message if Render email env missing
     async function sendCustomerEmail(){
       const k = getAdminKey();
-      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
+      if(!k) return toast("Admin key missing","Enter admin key first.","error");
 
       const orderId = $("mailDbId").value;
       const subject = $("mailSubject").value.trim();
@@ -2135,13 +2166,27 @@ Sena Fashion Support Team`;
     }
 
     // ---------- INIT ----------
-    document.addEventListener("DOMContentLoaded", ()=>{
+    document.addEventListener("DOMContentLoaded", async ()=>{
       $("yy").textContent = new Date().getFullYear();
       $("yy2").textContent = new Date().getFullYear();
       updateCartCount();
       updateAuthUI();
-      loadProducts();
       renderCart();
+      showAdminButtons(false);
+
+      // auto-check saved admin key (shows admin button only if valid)
+      const saved = getAdminKey();
+      if(saved){
+        try{
+          const res = await fetchWithTimeout(API_BASE + "/api/admin/ping",{
+            headers:{ "x-admin-key": saved }
+          }, 8000);
+          if(res.ok) showAdminButtons(true);
+          else localStorage.removeItem(ADMIN_KEY_STORAGE);
+        }catch(_){}
+      }
+
+      loadProducts();
     });
   </script>
 </body>
