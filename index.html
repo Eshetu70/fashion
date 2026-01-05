@@ -1,0 +1,2084 @@
+<!-- index.html ✅ FULL UPDATED FRONTEND (Sena Fashion) — EMAIL FIX INCLUDED
+  ✅ Same UI/UX you posted
+  ✅ Adds the missing frontend changes so Email Customer works correctly with your Render backend:
+     - Pass customer email into openMail()
+     - Disable Send if customer email missing
+     - Show clear “Email not configured on server” message (Render env missing)
+     - Stronger error parsing + better feedback (timeouts, server errors)
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sena Fashion — Professional Online Shopping</title>
+  <meta name="description" content="Sena Fashion — modern + cultural fashion. Shop premium styles, fast ordering, secure admin management." />
+
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#0f1620;
+      --card:#111b28;
+      --text:#e8edf5;
+      --muted:#a7b3c7;
+      --line:rgba(255,255,255,.12);
+      --accent:#5aa7ff;
+      --accent2:#8a5bff;
+      --good:#30d158;
+      --bad:#ff453a;
+      --warn:#ff9f0a;
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+
+    *{margin:0;padding:0;box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      background: radial-gradient(900px 500px at 20% 10%, rgba(90,167,255,.15), transparent 60%),
+                  radial-gradient(900px 500px at 80% 10%, rgba(138,91,255,.12), transparent 60%),
+                  linear-gradient(180deg,#070a10,#0b0f14);
+      color:var(--text);
+      min-height:100vh;
+    }
+    a{color:inherit;text-decoration:none}
+    .container{max-width:1320px;margin:0 auto;padding:0 18px}
+    .hidden{display:none!important}
+
+    /* Header */
+    header{
+      position:sticky;top:0;z-index:1000;
+      background:rgba(11,15,20,.78);
+      backdrop-filter: blur(12px);
+      border-bottom:1px solid var(--line);
+    }
+    .nav{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 0;
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px;font-weight:1000;
+      letter-spacing:.3px; cursor:pointer; user-select:none;
+    }
+    .brand-badge{
+      width:40px;height:40px;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 12px 30px rgba(90,167,255,.25);
+      font-size:18px; flex:0 0 auto;
+    }
+    .brand-title{font-size:1.1rem;line-height:1}
+    .brand-sub{font-size:.8rem;color:var(--muted);font-weight:800}
+
+    .nav-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      padding:.55rem .8rem;border-radius:999px;
+      font-weight:900;cursor:pointer;user-select:none;
+      display:inline-flex;align-items:center;gap:8px;
+      transition:.15s;
+    }
+    .pill:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
+    .pill .dot{
+      width:9px;height:9px;border-radius:99px;background:var(--good);
+      box-shadow:0 0 0 4px rgba(48,209,88,.15);
+      display:none;
+    }
+    .pill.authed .dot{display:inline-block}
+    .count{
+      background:rgba(255,69,58,.16);
+      border:1px solid rgba(255,69,58,.3);
+      color:#ffb3ad;
+      min-width:22px;height:22px;border-radius:999px;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:.8rem;font-weight:1000;
+      padding:0 7px;
+    }
+
+    /* Mobile nav buttons */
+    .nav-mobile{display:none;gap:10px;align-items:center}
+    .nav-desktop{display:flex}
+    .iconBtn{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      padding:.55rem .75rem;
+      border-radius:14px;
+      font-weight:1000;
+      cursor:pointer;
+      transition:.15s;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .iconBtn:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
+    .miniCount{
+      background:rgba(255,69,58,.16);
+      border:1px solid rgba(255,69,58,.3);
+      color:#ffb3ad;
+      min-width:22px;height:22px;border-radius:999px;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:.8rem;font-weight:1000;
+      padding:0 7px;
+    }
+
+    /* Mobile menu drawer */
+    .mMenuWrap{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:2700;
+      display:flex;
+      justify-content:flex-end;
+    }
+    .mMenu{
+      width:min(420px, 100%);
+      height:100%;
+      background:rgba(17,27,40,.98);
+      border-left:1px solid rgba(255,255,255,.10);
+      padding:14px;
+      overflow:auto;
+    }
+    .mHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .mBrand{display:flex;gap:10px;align-items:center}
+    .mAuthBox{
+      margin-top:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      border-radius:18px;
+      padding:12px;
+    }
+    .mAuthRow{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:8px}
+    .mLinks{margin-top:14px;display:grid;gap:10px}
+    .mLink{
+      width:100%;
+      text-align:left;
+      padding:.9rem .9rem;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      font-weight:1000;
+      cursor:pointer;
+      transition:.15s;
+    }
+    .mLink:hover{background:rgba(255,255,255,.06);transform:translateY(-1px)}
+    .mFooter{margin-top:18px;border-top:1px solid rgba(255,255,255,.10);padding-top:14px}
+
+    @media(max-width:820px){
+      .nav-desktop{display:none}
+      .nav-mobile{display:flex}
+    }
+
+    /* Hero */
+    .hero{padding:28px 0 12px}
+    .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:stretch}
+    .hero-card{
+      border:1px solid var(--line);
+      background:radial-gradient(1200px 600px at 20% 10%, rgba(90,167,255,.25), transparent 55%),
+                 radial-gradient(900px 500px at 85% 5%, rgba(138,91,255,.18), transparent 60%),
+                 rgba(255,255,255,.03);
+      border-radius:22px;
+      padding:22px;
+      min-height:210px;
+      overflow:hidden;
+      position:relative;
+      box-shadow: var(--shadow);
+    }
+    .hero-card h1{font-size:2rem;line-height:1.12;margin-bottom:8px;letter-spacing:.2px}
+    .hero-card p{color:var(--muted);max-width:62ch}
+    .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+    .btn{
+      border:none;border-radius:14px;font-weight:1000;
+      padding:.8rem 1rem;cursor:pointer;
+      transition:.15s;
+      display:inline-flex;align-items:center;gap:10px;
+      justify-content:center;
+      user-select:none;
+    }
+    .btn:disabled{opacity:.6;cursor:not-allowed;transform:none!important}
+    .btn-primary{
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#fff;
+      box-shadow:0 16px 40px rgba(90,167,255,.20);
+    }
+    .btn-primary:hover{transform:translateY(-1px);filter:brightness(1.02)}
+    .btn-ghost{
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+    .btn-ghost:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
+
+    .stat-card{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:22px;padding:18px;
+      display:grid;gap:10px;
+      box-shadow: var(--shadow);
+    }
+    .stat-row{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:12px;border-radius:16px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .stat-row .label{color:var(--muted);font-weight:900}
+    .stat-row .value{font-weight:1000}
+
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:.35rem .6rem;border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-weight:900;font-size:.85rem;
+    }
+
+    /* Filters */
+    .filters{
+      margin-top:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:18px;
+      padding:14px;
+    }
+    .filters-top{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{
+      padding:.55rem .85rem;border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      font-weight:1000;
+      cursor:pointer;
+      transition:.15s;
+    }
+    .tab.active{
+      background:linear-gradient(135deg, rgba(90,167,255,.25), rgba(138,91,255,.18));
+      color:#fff;
+      border-color:rgba(90,167,255,.35);
+    }
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    input, select, textarea{
+      width:100%;
+      padding:.75rem .85rem;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      outline:none;
+      font-weight:900;
+    }
+    input::placeholder, textarea::placeholder{color:rgba(167,179,199,.7)}
+    .control{width:min(260px,100%)}
+
+    /* Products grid */
+    .grid{
+      margin:18px 0 40px;
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap:14px;
+    }
+    .card{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:18px;
+      overflow:hidden;
+      transition:.15s;
+    }
+    .card:hover{transform:translateY(-2px);background:rgba(255,255,255,.05)}
+    .img{
+      width:100%;
+      height:260px;
+      background:rgba(255,255,255,.04);
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+      position:relative;
+      backface-visibility:hidden;
+      -webkit-backface-visibility:hidden;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+    .img img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      background:rgba(255,255,255,.04);
+      backface-visibility:hidden;
+      -webkit-backface-visibility:hidden;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+
+    .p-body{padding:12px}
+    .p-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .meta{color:var(--muted);font-weight:1000;font-size:.8rem}
+    .name{font-weight:1000;font-size:1.02rem;margin-top:6px}
+    .desc{color:var(--muted);font-weight:800;font-size:.9rem;margin-top:6px;min-height:38px}
+    .price{margin-top:10px;font-weight:1000;font-size:1.15rem}
+    .p-actions{margin-top:10px;display:flex;gap:10px}
+    .btn-dark{
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      color:var(--text);
+      flex:1;
+    }
+    .btn-dark:hover{background:rgba(255,255,255,.08)}
+    .btn-buy{
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#fff;flex:1;
+    }
+
+    .empty{
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius:18px;padding:18px;color:var(--muted);
+      background:rgba(255,255,255,.02);
+      text-align:center;
+    }
+
+    /* Panels */
+    .panel{
+      margin:18px 0 40px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:18px;
+      padding:14px;
+    }
+    .panel-head{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .title{font-weight:1000;font-size:1.25rem}
+    .sub{color:var(--muted);font-weight:800}
+
+    /* Admin section */
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    @media(max-width:980px){.hero-grid{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
+    .admin-box{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(17,27,40,.55);
+      border-radius:18px;padding:14px;
+    }
+    .admin-box h3{font-weight:1000;margin-bottom:8px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:700px){.row{grid-template-columns:1fr}}
+    .stack{display:grid;gap:10px}
+    .note{color:var(--muted);font-weight:800;font-size:.9rem}
+
+    .drop{
+      border:1.5px dashed rgba(255,255,255,.2);
+      border-radius:18px;
+      padding:14px;
+      background:rgba(255,255,255,.02);
+      cursor:pointer;
+      text-align:center;
+    }
+    .preview{
+      margin-top:10px;
+      width:100%;
+      max-height:240px;
+      object-fit:cover;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      display:none;
+    }
+
+    .list{display:grid;gap:10px;margin-top:10px}
+    .item{
+      display:flex;gap:12px;align-items:center;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      border-radius:16px;padding:10px;
+    }
+    .thumb{width:70px;height:70px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.03)}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .it-mid{flex:1}
+    .it-mid b{font-weight:1000}
+    .it-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .sm{padding:.55rem .75rem;border-radius:12px;font-weight:1000}
+    .danger{background:rgba(255,69,58,.16);border:1px solid rgba(255,69,58,.25);color:#ffd0cb}
+    .ok{background:rgba(48,209,88,.14);border:1px solid rgba(48,209,88,.25);color:#c8ffe0}
+    .warnBtn{background:rgba(255,159,10,.14);border:1px solid rgba(255,159,10,.25);color:#ffe3b2}
+
+    /* Modals / Drawers */
+    .backdrop{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:2600;
+      display:flex;align-items:center;justify-content:center;
+      padding:14px;
+    }
+    .modal{
+      width:min(760px, 100%);
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(17,27,40,.95);
+      border-radius:18px;
+      padding:14px;
+      box-shadow:0 30px 90px rgba(0,0,0,.5);
+    }
+    .modal-head{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin-bottom:10px;
+    }
+    .x{
+      width:42px;height:42px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      color:#fff;font-weight:1000;
+      cursor:pointer;
+    }
+    .x:hover{background:rgba(255,255,255,.08)}
+    .hr{height:1px;background:rgba(255,255,255,.10);margin:12px 0}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+    .drawerWrap{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:2400;
+      display:flex;justify-content:flex-end;
+    }
+    .drawer{
+      width:min(460px, 100%);
+      height:100%;
+      background:rgba(17,27,40,.98);
+      border-left:1px solid rgba(255,255,255,.10);
+      padding:14px;
+      overflow:auto;
+    }
+
+    .cartLine{
+      display:flex;gap:10px;align-items:center;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      border-radius:16px;padding:10px;margin-top:10px;
+      position:relative;
+    }
+    .cartLine .thumb{width:62px;height:62px}
+    .qty{display:flex;gap:8px;align-items:center;margin-top:6px}
+    .qty button{
+      width:34px;height:34px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      color:#fff;font-weight:1000;cursor:pointer;
+    }
+    .qty span{min-width:22px;text-align:center;font-weight:1000}
+    .rm{
+      position:absolute;right:10px;top:10px;
+      width:32px;height:32px;border-radius:12px;
+      border:1px solid rgba(255,69,58,.3);
+      background:rgba(255,69,58,.12);
+      color:#fff;font-weight:1000;cursor:pointer;
+    }
+
+    /* Orders item */
+    .orderItems{display:grid;gap:10px;margin-top:10px}
+    .orderItem{
+      display:flex;gap:12px;align-items:center;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      border-radius:16px;
+      padding:10px;
+    }
+    .orderThumb{
+      width:64px;height:64px;border-radius:14px;overflow:hidden;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      flex:0 0 auto;
+    }
+    .orderThumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .orderInfo{flex:1;min-width:0}
+    .orderInfo b{font-weight:1000}
+    .orderPrice{
+      font-weight:1000;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      padding:.35rem .6rem;border-radius:999px;
+      white-space:nowrap;
+    }
+
+    footer{
+      border-top:1px solid rgba(255,255,255,.10);
+      padding:18px 0 30px;
+      color:rgba(255,255,255,.7);
+      text-align:center;
+    }
+
+    /* Toast */
+    .toastWrap{
+      position:fixed;
+      right:16px; bottom:16px;
+      z-index:4000;
+      display:grid; gap:10px;
+    }
+    .toast{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(17,27,40,.96);
+      border-radius:16px;
+      padding:12px 12px;
+      box-shadow: var(--shadow);
+      min-width:min(420px, calc(100vw - 32px));
+      max-width:520px;
+      display:flex; gap:10px; align-items:flex-start;
+    }
+    .toast .tIcon{
+      width:38px;height:38px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(48,209,88,.18);
+      border:1px solid rgba(48,209,88,.25);
+      flex:0 0 auto;
+      font-weight:1000;
+    }
+    .toast .tBody{flex:1}
+    .toast .tTitle{font-weight:1000}
+    .toast .tText{color:var(--muted);font-weight:800;margin-top:4px;line-height:1.35;white-space:pre-wrap}
+    .toast .tClose{
+      width:36px;height:36px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      color:#fff;font-weight:1000;cursor:pointer;
+    }
+
+    /* Loading overlay */
+    .loadingBar{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:3900;
+      display:flex; align-items:center; justify-content:center;
+      padding:14px;
+    }
+    .loadingCard{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(17,27,40,.96);
+      border-radius:18px;
+      padding:16px;
+      box-shadow: var(--shadow);
+      width:min(520px, 100%);
+    }
+    .spinner{
+      width:28px;height:28px;
+      border-radius:999px;
+      border:3px solid rgba(255,255,255,.18);
+      border-top-color: rgba(90,167,255,.95);
+      animation: spin 0.8s linear infinite;
+      display:inline-block;
+      vertical-align:middle;
+      margin-right:10px;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Tiny inline spinner */
+    .miniSpin{
+      width:16px;height:16px;border-radius:999px;
+      border:2px solid rgba(255,255,255,.22);
+      border-top-color: rgba(255,255,255,.92);
+      animation: spin .8s linear infinite;
+      display:inline-block;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- LOADING OVERLAY -->
+  <div id="loading" class="loadingBar hidden">
+    <div class="loadingCard">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="spinner"></span>
+        <div>
+          <div style="font-weight:1000" id="loadingTitle">Processing...</div>
+          <div class="sub" id="loadingText">Please wait.</div>
+        </div>
+      </div>
+      <div class="sub" style="margin-top:10px">
+        If it takes more than 20 seconds, your network may be slow. We will show a clear error message.
+      </div>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div id="toastWrap" class="toastWrap"></div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="container">
+      <div class="nav">
+        <a class="brand" onclick="showShop()">
+          <div class="brand-badge">SF</div>
+          <div>
+            <div class="brand-title">Sena Fashion</div>
+            <div class="brand-sub">Modern • Cultural • Premium</div>
+          </div>
+        </a>
+
+        <!-- Desktop -->
+        <div class="nav-right nav-desktop">
+          <div class="pill" onclick="showShop()">🛍️ Shop</div>
+          <div class="pill" onclick="openOrders()">📦 My Orders</div>
+          <div class="pill" onclick="openAdmin()">🛠️ Admin</div>
+
+          <div class="pill" id="authPill" onclick="openAccount()">
+            <span class="dot"></span>
+            👤 <span id="authLabel">Login</span>
+          </div>
+
+          <div class="pill" onclick="openCart()">
+            🛒 Cart <span class="count" id="cartCount">0</span>
+          </div>
+        </div>
+
+        <!-- Mobile -->
+        <div class="nav-mobile">
+          <button class="iconBtn" onclick="openCart()" aria-label="Open cart">
+            🛒 <span class="miniCount" id="cartCountMobile">0</span>
+          </button>
+          <button class="iconBtn" onclick="toggleMobileMenu(true)" aria-label="Open menu">☰</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE MENU -->
+  <div id="mMenuWrap" class="mMenuWrap hidden" onclick="if(event.target.id==='mMenuWrap'){toggleMobileMenu(false)}">
+    <div class="mMenu" onclick="event.stopPropagation()">
+      <div class="mHead">
+        <div class="mBrand">
+          <div class="brand-badge" style="width:38px;height:38px;border-radius:12px">SF</div>
+          <div>
+            <div style="font-weight:1000;line-height:1">Sena Fashion</div>
+            <div style="color:var(--muted);font-weight:800;font-size:.85rem">Modern • Cultural • Premium</div>
+          </div>
+        </div>
+        <button class="x" onclick="toggleMobileMenu(false)">✕</button>
+      </div>
+
+      <div class="mAuthBox">
+        <div class="badge">👤 Account</div>
+        <div class="mAuthRow">
+          <div style="font-weight:1000" id="mAuthLabel">Login</div>
+          <button class="btn btn-primary" style="padding:.65rem .85rem;border-radius:12px" onclick="mobileAccountAction()">Open</button>
+        </div>
+        <div class="note" id="mAuthHint">Login to checkout & track orders.</div>
+      </div>
+
+      <div class="mLinks">
+        <button class="mLink" onclick="toggleMobileMenu(false); showShop()">🛍️ Shop</button>
+        <button class="mLink" onclick="toggleMobileMenu(false); openOrders()">📦 My Orders</button>
+        <button class="mLink" onclick="toggleMobileMenu(false); openAdmin()">🛠️ Admin</button>
+        <button class="mLink" onclick="toggleMobileMenu(false); openCart()">🛒 Cart</button>
+      </div>
+
+      <div class="mFooter">
+        <div class="note">© <span id="yy2"></span> Sena Fashion</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <section id="shopView">
+    <div class="container hero">
+      <div class="hero-grid">
+        <div class="hero-card">
+          <span class="badge">✨ Premium Fashion Collection</span>
+          <h1>Shop your perfect style — fast, clean, and professional.</h1>
+          <p>Browse modern & cultural fashion. Add to cart, checkout, track orders, and manage everything with a secure Admin dashboard.</p>
+
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="scrollToProducts()">Shop Now</button>
+            <button class="btn btn-ghost" onclick="openCart()">View Cart</button>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-row">
+            <div class="label">Products</div>
+            <div class="value" id="statProducts">0</div>
+          </div>
+          <div class="stat-row">
+            <div class="label">Categories</div>
+            <div class="value">8</div>
+          </div>
+          <div class="stat-row">
+            <div class="label">Secure Admin</div>
+            <div class="value">Enabled ✅</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters" id="filtersBox">
+        <div class="filters-top">
+          <div class="tabs" id="tabs">
+            <div class="tab active" data-cat="all" onclick="setCategory('all', this)">All</div>
+            <div class="tab" data-cat="bridal" onclick="setCategory('bridal', this)">Bridal</div>
+            <div class="tab" data-cat="dinner_dress" onclick="setCategory('dinner_dress', this)">Dinner Dress</div>
+            <div class="tab" data-cat="short_dress" onclick="setCategory('short_dress', this)">Short Dress</div>
+            <div class="tab" data-cat="occasional_dress" onclick="setCategory('occasional_dress', this)">Occasional</div>
+            <div class="tab" data-cat="suits" onclick="setCategory('suits', this)">Suits</div>
+            <div class="tab" data-cat="pjs" onclick="setCategory('pjs', this)">PJs</div>
+            <div class="tab" data-cat="sport_wears" onclick="setCategory('sport_wears', this)">Sport Wears</div>
+          </div>
+
+          <div class="controls">
+            <div class="control">
+              <input id="q" placeholder="Search product name..." oninput="renderProducts()" />
+            </div>
+            <div class="control">
+              <select id="genderFilter" onchange="renderProducts()">
+                <option value="all">All Genders</option>
+                <option value="women">Women</option>
+                <option value="men">Men</option>
+                <option value="kids">Kids</option>
+              </select>
+            </div>
+            <div class="control">
+              <select id="sort" onchange="renderProducts()">
+                <option value="new">Newest</option>
+                <option value="priceLow">Price: Low → High</option>
+                <option value="priceHigh">Price: High → Low</option>
+              </select>
+            </div>
+            <button class="btn btn-ghost" onclick="resetShopFiltersToAll()">Reset</button>
+          </div>
+        </div>
+
+        <div class="sub" id="shopHint">Loading products...</div>
+      </div>
+
+      <div id="productsAnchor"></div>
+      <div class="grid" id="grid"></div>
+      <div id="shopEmpty" class="empty hidden">No products found. Try Reset or switch category.</div>
+    </div>
+  </section>
+
+  <!-- MY ORDERS -->
+  <section id="ordersView" class="hidden">
+    <div class="container">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="title">📦 My Orders</div>
+            <div class="sub">Login required to view your orders.</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-ghost" onclick="showShop()">Back to Shop</button>
+            <button class="btn btn-primary" onclick="loadMyOrders()">Refresh</button>
+          </div>
+        </div>
+        <div id="ordersList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="adminView" class="hidden">
+    <div class="container">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="title">🛠️ Admin Dashboard</div>
+            <div class="sub">Manage products, view customer orders, update status/payment, and email customers.</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-ghost" onclick="setAdminKey()">Set Admin Key</button>
+            <button class="btn btn-ghost" onclick="logoutAdmin()">Logout Admin</button>
+            <button class="btn btn-primary" onclick="loadAdminOrders()">Refresh Orders</button>
+          </div>
+        </div>
+
+        <div class="two">
+          <!-- Add Product -->
+          <div class="admin-box">
+            <h3>➕ Add Product</h3>
+            <div class="note">Image required (max 2MB). After upload, product appears in Shop.</div>
+
+            <form id="productForm" class="stack">
+              <div class="drop" onclick="$('imageInput').click()">
+                <div style="font-weight:1000">📷 Click to upload product image</div>
+                <div class="note">PNG/JPG recommended • max 2MB</div>
+                <input id="imageInput" type="file" accept="image/*" class="hidden" />
+                <img id="imagePreview" class="preview" />
+              </div>
+
+              <input id="productName" placeholder="Product Name (required)" required />
+              <textarea id="productDescription" rows="3" placeholder="Description (optional)"></textarea>
+
+              <div class="row">
+                <select id="productCategory" required>
+                  <option value="bridal">Bridal</option>
+                  <option value="dinner_dress">Dinner Dress</option>
+                  <option value="short_dress">Short Dress</option>
+                  <option value="occasional_dress">Occasional Dress</option>
+                  <option value="suits">Suits</option>
+                  <option value="pjs">PJs</option>
+                  <option value="sport_wears">Sport Wears</option>
+                </select>
+
+                <select id="productGender" required>
+                  <option value="women">Women</option>
+                  <option value="men">Men</option>
+                  <option value="kids">Kids</option>
+                </select>
+              </div>
+
+              <input id="productPrice" type="number" step="0.01" placeholder="Price ETB (required)" required />
+
+              <button id="addBtn" class="btn btn-primary" type="submit">Add Product</button>
+              <div class="note" id="adminMsg"></div>
+            </form>
+          </div>
+
+          <!-- Manage Products -->
+          <div class="admin-box">
+            <h3>📦 Manage Products</h3>
+            <div class="note">Edit / Delete products instantly.</div>
+            <div class="list" id="productList"></div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <!-- Admin Orders -->
+        <div class="admin-box">
+          <h3>🧾 Customer Orders</h3>
+          <div class="note">Update order status + payment status, and email the customer.</div>
+          <div class="list" id="adminOrders"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="backdrop hidden" onclick="if(event.target.id==='authModal'){closeAuth()}">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="title" id="authTitle">Login</div>
+          <div class="sub" id="authSub">Login to checkout & view orders.</div>
+        </div>
+        <button class="x" onclick="closeAuth()">✕</button>
+      </div>
+
+      <div id="loginBox" class="stack">
+        <input id="loginEmail" type="email" placeholder="Email" />
+        <input id="loginPass" type="password" placeholder="Password" />
+        <div class="actions">
+          <button class="btn btn-primary" onclick="doLogin()">Login</button>
+          <button class="btn btn-ghost" onclick="showRegister()">Create account</button>
+        </div>
+        <div class="note" id="loginMsg"></div>
+      </div>
+
+      <div id="regBox" class="stack hidden">
+        <input id="regName" placeholder="Full Name" />
+        <input id="regEmail" type="email" placeholder="Email" />
+        <input id="regPass" type="password" placeholder="Password (min 6)" />
+        <div class="actions">
+          <button class="btn btn-primary" onclick="doRegister()">Register</button>
+          <button class="btn btn-ghost" onclick="showLogin()">I have an account</button>
+        </div>
+        <div class="note" id="regMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CART DRAWER -->
+  <div id="cartWrap" class="drawerWrap hidden" onclick="if(event.target.id==='cartWrap'){closeCart()}">
+    <div class="drawer" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div class="title">🛒 Cart</div>
+        <button class="x" onclick="closeCart()">✕</button>
+      </div>
+
+      <div id="cartItems"></div>
+
+      <div class="hr"></div>
+      <div class="stat-row">
+        <div class="label">Subtotal</div>
+        <div class="value" id="subtotal">0 ETB</div>
+      </div>
+
+      <div class="actions" style="margin-top:10px">
+        <button class="btn btn-ghost" onclick="clearCart()">Clear Cart</button>
+        <button class="btn btn-primary" onclick="openCheckout()">Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="checkoutModal" class="backdrop hidden" onclick="if(event.target.id==='checkoutModal'){closeCheckout()}">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="title">✅ Checkout</div>
+          <div class="sub">Fill details and place your order.</div>
+        </div>
+        <button class="x" onclick="closeCheckout()">✕</button>
+      </div>
+
+      <div class="row">
+        <input id="ckName" placeholder="Full Name (required)" />
+        <input id="ckPhone" placeholder="Phone (required)" />
+      </div>
+
+      <div class="row">
+        <input id="ckEmail" placeholder="Email (required for updates)" />
+        <input id="ckCity" placeholder="City" />
+      </div>
+
+      <input id="ckAddress" placeholder="Address (required)" />
+      <input id="ckCountry" value="Ethiopia" />
+
+      <textarea id="ckNotes" rows="3" placeholder="Order notes (optional)"></textarea>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <select id="ckPay" onchange="togglePayFields()">
+          <option value="cash">Cash on Delivery</option>
+          <option value="card">Card</option>
+          <option value="telebirr">Telebirr</option>
+        </select>
+        <input id="ckTotal" disabled />
+      </div>
+
+      <div id="teleFields" class="hidden stack" style="margin-top:10px">
+        <input id="ckTeleRef" placeholder="Telebirr Reference / Transaction ID" />
+        <input id="ckProof" type="file" accept="image/*" />
+        <div class="note">Optional: Upload Telebirr proof screenshot (max 3MB).</div>
+      </div>
+
+      <div id="cardFields" class="hidden note" style="margin-top:10px">
+        Card payment is a placeholder (integrate Stripe/PayPal later).
+      </div>
+
+      <div class="actions" style="margin-top:12px">
+        <button class="btn btn-primary" id="placeOrderBtn" onclick="placeOrder()">
+          <span id="placeOrderBtnText">Place Order</span>
+        </button>
+        <button class="btn btn-ghost" onclick="closeCheckout()">Cancel</button>
+      </div>
+
+      <div class="note" id="checkoutMsg"></div>
+    </div>
+  </div>
+
+  <!-- EMAIL CUSTOMER MODAL -->
+  <div id="mailModal" class="backdrop hidden" onclick="if(event.target.id==='mailModal'){closeMail()}">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="title">✉️ Email Customer</div>
+          <div class="sub" id="mailSub">Send a professional update message.</div>
+        </div>
+        <button class="x" onclick="closeMail()">✕</button>
+      </div>
+
+      <input id="mailDbId" class="hidden" />
+      <input id="mailSubject" placeholder="Subject" />
+      <textarea id="mailMessage" rows="7" placeholder="Write message..."></textarea>
+
+      <div class="actions" style="margin-top:12px">
+        <button class="btn btn-primary" id="mailSendBtn" onclick="sendCustomerEmail()">Send Email</button>
+        <button class="btn btn-ghost" onclick="closeMail()">Cancel</button>
+      </div>
+      <div class="note" id="mailMsg"></div>
+    </div>
+  </div>
+
+  <!-- EDIT PRODUCT MODAL -->
+  <div id="editModal" class="backdrop hidden" onclick="if(event.target.id==='editModal'){closeEdit()}">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div class="title">✏️ Edit Product</div>
+        <button class="x" onclick="closeEdit()">✕</button>
+      </div>
+
+      <input id="editId" class="hidden" />
+      <div class="row">
+        <input id="editName" placeholder="Product name" />
+        <input id="editPrice" type="number" step="0.01" placeholder="Price ETB" />
+      </div>
+      <textarea id="editDesc" rows="3" placeholder="Description"></textarea>
+      <div class="row">
+        <select id="editCat">
+          <option value="bridal">Bridal</option>
+          <option value="dinner_dress">Dinner Dress</option>
+          <option value="short_dress">Short Dress</option>
+          <option value="occasional_dress">Occasional Dress</option>
+          <option value="suits">Suits</option>
+          <option value="pjs">PJs</option>
+          <option value="sport_wears">Sport Wears</option>
+        </select>
+        <select id="editGen">
+          <option value="women">Women</option>
+          <option value="men">Men</option>
+          <option value="kids">Kids</option>
+        </select>
+      </div>
+
+      <div class="stack">
+        <div class="note">Change Image (optional):</div>
+        <input id="editImg" type="file" accept="image/*" />
+        <img id="editPrev" class="preview" />
+      </div>
+
+      <div class="actions" style="margin-top:12px">
+        <button class="btn btn-primary" onclick="saveEdit()">Save</button>
+        <button class="btn btn-ghost" onclick="closeEdit()">Cancel</button>
+      </div>
+      <div class="note" id="editMsg"></div>
+    </div>
+  </div>
+
+  <footer>© <span id="yy"></span> Sena Fashion. All rights reserved.</footer>
+
+  <script>
+    // ---------- CONFIG ----------
+    const API_BASE =
+      (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+        ? "http://localhost:3000"
+        : "https://fashion-2tif.onrender.com";
+
+    // ---------- STORAGE ----------
+    const CART_KEY = "SENA_FASHION_CART";
+    const ADMIN_KEY_STORAGE = "SENA_FASHION_ADMIN_KEY";
+    const AUTH_TOKEN_KEY = "SENA_FASHION_AUTH_TOKEN";
+
+    // ---------- STATE ----------
+    let products = [];
+    let currentCategory = "all";
+    let cart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+    let placingOrder = false; // ✅ prevents duplicate clicks
+
+    // ---------- DOM HELP ----------
+    const $ = (id) => document.getElementById(id);
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function money(n){ return (Number(n)||0).toFixed(0); }
+
+    async function readJsonSafe(res){
+      const text = await res.text();
+      try { return { text, json: JSON.parse(text) }; } catch { return { text, json: null }; }
+    }
+
+    // ---------- LOADING + TOAST ----------
+    function showLoading(title="Processing...", text="Please wait."){
+      $("loadingTitle").textContent = title;
+      $("loadingText").textContent = text;
+      $("loading").classList.remove("hidden");
+    }
+    function hideLoading(){ $("loading").classList.add("hidden"); }
+
+    function toast(title, text, type="success", timeout=4500){
+      const wrap = $("toastWrap");
+      const t = document.createElement("div");
+      t.className = "toast";
+      const icon = type==="success" ? "✅" : type==="error" ? "❌" : "ℹ️";
+      const bg = type==="success" ? "rgba(48,209,88,.18)" : type==="error" ? "rgba(255,69,58,.18)" : "rgba(90,167,255,.16)";
+      const br = type==="success" ? "rgba(48,209,88,.25)" : type==="error" ? "rgba(255,69,58,.25)" : "rgba(90,167,255,.25)";
+      t.innerHTML = `
+        <div class="tIcon" style="background:${bg};border-color:${br}">${icon}</div>
+        <div class="tBody">
+          <div class="tTitle">${escapeHtml(title)}</div>
+          <div class="tText">${escapeHtml(text)}</div>
+        </div>
+        <button class="tClose" aria-label="Close">✕</button>
+      `;
+      t.querySelector(".tClose").onclick = () => t.remove();
+      wrap.appendChild(t);
+      if(timeout) setTimeout(()=>{ if(t.isConnected) t.remove(); }, timeout);
+    }
+
+    // ---------- TOKEN ----------
+    function getToken(){
+      let t = localStorage.getItem(AUTH_TOKEN_KEY) || "";
+      t = String(t).trim();
+      if(!t) return "";
+      if((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) t = t.slice(1,-1).trim();
+      if(t.toLowerCase().startsWith("bearer ")) t = t.slice(7).trim();
+      return t;
+    }
+    function setToken(t){ localStorage.setItem(AUTH_TOKEN_KEY, String(t||"").trim()); }
+    function clearToken(){ localStorage.removeItem(AUTH_TOKEN_KEY); }
+
+    // ---------- FAST FETCH WITH TIMEOUT ----------
+    async function fetchWithTimeout(url, options={}, timeoutMs=20000){
+      const controller = new AbortController();
+      const t = setTimeout(()=>controller.abort(), timeoutMs);
+      try{
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        return res;
+      }catch(e){
+        if(e && e.name === "AbortError"){
+          throw new Error("Request timed out. Please try again (slow network/server).");
+        }
+        throw e;
+      }finally{
+        clearTimeout(t);
+      }
+    }
+
+    async function apiFetch(url, options = {}, timeoutMs=20000){
+      const token = getToken();
+      const headers = new Headers(options.headers || {});
+      if(token) headers.set("Authorization","Bearer " + token);
+
+      const res = await fetchWithTimeout(url, { ...options, headers }, timeoutMs);
+
+      if(res.status === 401){
+        const body = await res.text().catch(()=> "");
+        clearToken();
+        updateAuthUI();
+        toast("Session expired","Please login again to continue.","info");
+        openAuth();
+        throw new Error(body || "Unauthorized");
+      }
+      return res;
+    }
+
+    // ---------- MOBILE MENU ----------
+    function toggleMobileMenu(open){
+      const wrap = $("mMenuWrap");
+      if(!wrap) return;
+      wrap.classList.toggle("hidden", !open);
+    }
+    function mobileAccountAction(){
+      toggleMobileMenu(false);
+      openAccount();
+    }
+    function updateMobileAuthUI(){
+      const authed = !!getToken();
+      const label = authed ? "Account" : "Login";
+      const hint  = authed ? "Manage your account and view orders." : "Login to checkout & track orders.";
+      $("mAuthLabel").textContent = label;
+      $("mAuthHint").textContent = hint;
+    }
+
+    // ---------- AUTH ----------
+    function updateAuthUI(){
+      const authed = !!getToken();
+      $("authLabel").textContent = authed ? "Account" : "Login";
+      $("authPill").classList.toggle("authed", authed);
+      updateMobileAuthUI();
+    }
+
+    function openAccount(){
+      if(!getToken()){ openAuth(); return; }
+      const c = prompt("Type:\n1 = My Orders\n2 = Logout");
+      if(c === "1") openOrders();
+      if(c === "2"){ clearToken(); updateAuthUI(); toast("Logged out","You have been logged out successfully."); }
+    }
+
+    function openAuth(){
+      $("authModal").classList.remove("hidden");
+      showLogin();
+    }
+    function closeAuth(){ $("authModal").classList.add("hidden"); }
+    function showRegister(){
+      $("authTitle").textContent = "Create Account";
+      $("authSub").textContent = "Register to checkout & track orders.";
+      $("loginBox").classList.add("hidden");
+      $("regBox").classList.remove("hidden");
+      $("loginMsg").textContent = "";
+      $("regMsg").textContent = "";
+    }
+    function showLogin(){
+      $("authTitle").textContent = "Login";
+      $("authSub").textContent = "Login to checkout & view orders.";
+      $("regBox").classList.add("hidden");
+      $("loginBox").classList.remove("hidden");
+      $("loginMsg").textContent = "";
+      $("regMsg").textContent = "";
+    }
+
+    async function doRegister(){
+      $("regMsg").textContent = "";
+      const fullName = $("regName").value.trim();
+      const email = $("regEmail").value.trim();
+      const password = $("regPass").value;
+
+      try{
+        showLoading("Creating account...","Please wait.");
+        const res = await fetchWithTimeout(API_BASE + "/api/auth/register",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ fullName, email, password })
+        }, 20000);
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Register failed");
+
+        setToken(json.token);
+        updateAuthUI();
+        closeAuth();
+        toast("Welcome!","Your account has been created successfully.");
+      }catch(e){
+        $("regMsg").textContent = e.message;
+      }finally{
+        hideLoading();
+      }
+    }
+
+    async function doLogin(){
+      $("loginMsg").textContent = "";
+      const email = $("loginEmail").value.trim();
+      const password = $("loginPass").value;
+
+      try{
+        showLoading("Signing in...","Please wait.");
+        const res = await fetchWithTimeout(API_BASE + "/api/auth/login",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ email, password })
+        }, 20000);
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Login failed");
+
+        setToken(json.token);
+        updateAuthUI();
+        closeAuth();
+        toast("Signed in","You are logged in successfully.");
+      }catch(e){
+        $("loginMsg").textContent = e.message;
+      }finally{
+        hideLoading();
+      }
+    }
+
+    // ---------- NAV ----------
+    function showShop(){
+      $("shopView").classList.remove("hidden");
+      $("ordersView").classList.add("hidden");
+      $("adminView").classList.add("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    function openOrders(){
+      $("shopView").classList.add("hidden");
+      $("adminView").classList.add("hidden");
+      $("ordersView").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      if(!getToken()){
+        $("ordersList").innerHTML =
+          `<div class="empty">Please login to view orders.
+            <a style="color:var(--accent);font-weight:1000;cursor:pointer" onclick="openAuth()">Login</a>
+          </div>`;
+        return;
+      }
+      loadMyOrders();
+    }
+    function openAdmin(){
+      $("shopView").classList.add("hidden");
+      $("ordersView").classList.add("hidden");
+      $("adminView").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      renderAdminProducts();
+      loadAdminOrders();
+    }
+
+    function scrollToProducts(){
+      $("productsAnchor").scrollIntoView({ behavior:"smooth" });
+    }
+
+    // ---------- SHOP FILTERS ----------
+    function setCategory(cat, el){
+      currentCategory = cat;
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      if(el) el.classList.add("active");
+      renderProducts();
+    }
+
+    function resetShopFiltersToAll(){
+      $("q").value = "";
+      $("genderFilter").value = "all";
+      $("sort").value = "new";
+      currentCategory = "all";
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      const first = document.querySelector(".tab");
+      if(first) first.classList.add("active");
+      renderProducts();
+    }
+
+    // ---------- PRODUCTS ----------
+    async function loadProducts(){
+      $("shopHint").textContent = "Loading products...";
+      try{
+        const res = await fetchWithTimeout(API_BASE + "/api/products", { cache:"no-store" }, 20000);
+        const data = await res.json();
+
+        const raw = Array.isArray(data) ? data : (data.products || []);
+        products = raw.map(p => ({
+          ...p,
+          id: p.id || p._id,
+          category: String(p.category || "").trim(),
+          gender: String(p.gender || "").trim()
+        }));
+
+        $("statProducts").textContent = String(products.length);
+        $("shopHint").textContent = "Browse by category, search, or filter by gender.";
+        renderProducts();
+        renderAdminProducts();
+      }catch(e){
+        $("shopHint").textContent = "Failed to load products. Please refresh.";
+        console.error(e);
+      }
+    }
+
+    function imgTag(url, alt){
+      const safe = String(url || "").trim();
+      if(!safe) return "";
+      return `<img src="${safe}"
+        alt="${escapeHtml(alt||"")}"
+        loading="lazy"
+        decoding="async"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+        onerror="this.style.display='none'">`;
+    }
+
+    function renderProducts(){
+      const q = $("q").value.trim().toLowerCase();
+      const g = $("genderFilter").value;
+      const sort = $("sort").value;
+
+      let list = [...products];
+
+      if(currentCategory !== "all") list = list.filter(p => String(p.category) === String(currentCategory));
+      if(g !== "all") list = list.filter(p => String(p.gender) === String(g));
+      if(q) list = list.filter(p => (p.name||"").toLowerCase().includes(q));
+
+      if(sort === "priceLow") list.sort((a,b)=>(Number(a.price)||0)-(Number(b.price)||0));
+      if(sort === "priceHigh") list.sort((a,b)=>(Number(b.price)||0)-(Number(a.price)||0));
+      if(sort === "new") list.sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+
+      $("shopEmpty").classList.toggle("hidden", list.length > 0);
+
+      $("grid").innerHTML = list.map(p => `
+        <div class="card">
+          <div class="img">${imgTag(p.image, p.name)}</div>
+          <div class="p-body">
+            <div class="p-top">
+              <div class="meta">${escapeHtml(p.category||"")} • ${escapeHtml(p.gender||"")}</div>
+              <div class="badge">New</div>
+            </div>
+            <div class="name">${escapeHtml(p.name||"")}</div>
+            <div class="desc">${escapeHtml(p.description||"")}</div>
+            <div class="price">${money(p.price)} ETB</div>
+            <div class="p-actions">
+              <button class="btn btn-dark" onclick="addToCart('${String(p.id).replaceAll("'","")}')">Add to Cart</button>
+              <button class="btn btn-buy" onclick="quickBuy('${String(p.id).replaceAll("'","")}')">Buy</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function quickBuy(id){
+      addToCart(id);
+      openCart();
+      openCheckout();
+    }
+
+    // ---------- CART ----------
+    function saveCart(){
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      updateCartCount();
+    }
+
+    function updateCartCount(){
+      const count = cart.reduce((s,it)=> s + (Number(it.qty)||1), 0);
+      $("cartCount").textContent = String(count);
+      $("cartCountMobile").textContent = String(count);
+    }
+
+    function subtotal(){
+      return cart.reduce((s,it)=> s + (Number(it.price)||0)*(Number(it.qty)||1), 0);
+    }
+
+    function addToCart(productId){
+      const p = products.find(x => String(x.id) === String(productId));
+      if(!p) return toast("Product not found","Please refresh the page.","error");
+
+      const ex = cart.find(x => String(x.productId) === String(productId));
+      if(ex) ex.qty = (Number(ex.qty)||1) + 1;
+      else cart.push({ productId: p.id, name:p.name, price:Number(p.price)||0, qty:1, image:p.image||"" });
+
+      saveCart();
+      renderCart();
+      toast("Added to cart", p.name || "Item added.");
+    }
+
+    function removeFromCart(productId){
+      cart = cart.filter(x => String(x.productId) !== String(productId));
+      saveCart();
+      renderCart();
+    }
+    function changeQty(productId, d){
+      const it = cart.find(x => String(x.productId) === String(productId));
+      if(!it) return;
+      it.qty = Math.max(1, (Number(it.qty)||1) + d);
+      saveCart();
+      renderCart();
+    }
+    function clearCart(){
+      if(!confirm("Clear cart?")) return;
+      cart = [];
+      saveCart();
+      renderCart();
+    }
+
+    function openCart(){
+      $("cartWrap").classList.remove("hidden");
+      renderCart();
+    }
+    function closeCart(){ $("cartWrap").classList.add("hidden"); }
+
+    function renderCart(){
+      const box = $("cartItems");
+      if(cart.length === 0){
+        box.innerHTML = `<div class="empty">Your cart is empty.</div>`;
+        $("subtotal").textContent = "0 ETB";
+        return;
+      }
+      box.innerHTML = cart.map(it => `
+        <div class="cartLine">
+          <div class="thumb">${imgTag(it.image, it.name)}</div>
+          <div style="flex:1">
+            <div style="font-weight:1000">${escapeHtml(it.name||"")}</div>
+            <div class="meta" style="margin-top:4px">${money(it.price)} ETB</div>
+            <div class="qty">
+              <button onclick="changeQty('${String(it.productId).replaceAll("'","")}',-1)">-</button>
+              <span>${Number(it.qty)||1}</span>
+              <button onclick="changeQty('${String(it.productId).replaceAll("'","")}',1)">+</button>
+            </div>
+          </div>
+          <button class="rm" onclick="removeFromCart('${String(it.productId).replaceAll("'","")}')">✕</button>
+        </div>
+      `).join("");
+      $("subtotal").textContent = `${money(subtotal())} ETB`;
+    }
+
+    // ---------- CHECKOUT ----------
+    function openCheckout(){
+      if(cart.length === 0) return toast("Cart is empty","Add items before checkout.","error");
+      if(!getToken()){ toast("Login required","Please login before checkout.","info"); openAuth(); return; }
+
+      closeCart();
+      setTimeout(() => {
+        $("ckTotal").value = `${money(subtotal())} ETB`;
+        $("checkoutMsg").textContent = "";
+        togglePayFields();
+        $("checkoutModal").classList.remove("hidden");
+      }, 30);
+    }
+
+    function closeCheckout(){ $("checkoutModal").classList.add("hidden"); }
+    function togglePayFields(){
+      const m = $("ckPay").value;
+      $("teleFields").classList.toggle("hidden", m !== "telebirr");
+      $("cardFields").classList.toggle("hidden", m !== "card");
+    }
+
+    function setPlaceOrderBtnBusy(busy){
+      const btn = $("placeOrderBtn");
+      const t = $("placeOrderBtnText");
+      btn.disabled = !!busy;
+      if(busy){
+        t.innerHTML = `<span class="miniSpin"></span> Placing...`;
+      }else{
+        t.textContent = "Place Order";
+      }
+    }
+
+    // ✅ MAIN FIX: fast + safe checkout (timeout + always cleanup + clear cart on success)
+    async function placeOrder(){
+      if(placingOrder) return; // prevent duplicates
+      $("checkoutMsg").textContent = "";
+
+      const fullName = $("ckName").value.trim();
+      const phone = $("ckPhone").value.trim();
+      const email = $("ckEmail").value.trim();
+      const city = $("ckCity").value.trim();
+      const address = $("ckAddress").value.trim();
+      const country = $("ckCountry").value.trim();
+      const notes = $("ckNotes").value.trim();
+      const paymentMethod = $("ckPay").value;
+      const telebirrRef = $("ckTeleRef").value.trim();
+      const proof = $("ckProof").files[0];
+
+      if(!fullName) return $("checkoutMsg").textContent = "Full name is required.";
+      if(!phone) return $("checkoutMsg").textContent = "Phone is required.";
+      if(!email) return $("checkoutMsg").textContent = "Email is required (for updates).";
+      if(!address) return $("checkoutMsg").textContent = "Address is required.";
+
+      if(paymentMethod === "telebirr" && proof && proof.size > 3*1024*1024){
+        return $("checkoutMsg").textContent = "Telebirr proof max 3MB.";
+      }
+
+      // Build items payload (small & clean)
+      const itemsPayload = cart.map(it => ({
+        productId: it.productId,
+        name: it.name,
+        price: it.price,
+        qty: it.qty,
+        image: it.image || ""
+      }));
+
+      placingOrder = true;
+      setPlaceOrderBtnBusy(true);
+
+      try{
+        showLoading("Placing order...","Please wait while we confirm your order.");
+
+        let res, bodyText, bodyJson;
+
+        // ✅ Faster: JSON if no file. FormData only if proof exists.
+        if(paymentMethod === "telebirr" && proof){
+          const fd = new FormData();
+          fd.append("items", JSON.stringify(itemsPayload));
+          fd.append("fullName", fullName);
+          fd.append("phone", phone);
+          fd.append("email", email);
+          fd.append("city", city);
+          fd.append("address", address);
+          fd.append("country", country);
+          fd.append("notes", notes);
+          fd.append("paymentMethod", paymentMethod);
+          fd.append("telebirrRef", telebirrRef);
+          fd.append("proof", proof); // backend upload.single("proof")
+
+          res = await apiFetch(API_BASE + "/api/orders", { method:"POST", body: fd }, 25000);
+          ({ text: bodyText, json: bodyJson } = await readJsonSafe(res));
+        } else {
+          res = await apiFetch(API_BASE + "/api/orders", {
+            method:"POST",
+            headers: { "Content-Type":"application/json" },
+            body: JSON.stringify({
+              items: itemsPayload,
+              fullName, phone, email, city, address, country, notes,
+              paymentMethod,
+              telebirrRef
+            })
+          }, 25000);
+          ({ text: bodyText, json: bodyJson } = await readJsonSafe(res));
+        }
+
+        if(!res.ok){
+          throw new Error(bodyJson?.error || bodyJson?.details || bodyText || "Order failed");
+        }
+
+        const orderId = bodyJson?.order?.orderId || "";
+        toast("Order placed successfully", `Order ID: ${orderId}\nThank you for shopping with Sena Fashion!`, "success", 6500);
+
+        // ✅ CLEAR CART + UI immediately
+        cart = [];
+        saveCart();
+        renderCart();
+
+        // ✅ reset checkout (prevents “busy” state)
+        $("ckTeleRef").value = "";
+        $("ckProof").value = "";
+
+        closeCheckout();
+        closeCart();
+
+        // ✅ show orders (non-blocking)
+        openOrders();
+
+      }catch(e){
+        $("checkoutMsg").textContent = e.message || "Order failed.";
+        toast("Order failed", e.message || "Order failed.", "error");
+      }finally{
+        hideLoading();
+        placingOrder = false;
+        setPlaceOrderBtnBusy(false);
+      }
+    }
+
+    // ---------- MY ORDERS ----------
+    async function loadMyOrders(){
+      const box = $("ordersList");
+      box.innerHTML = `<div class="empty">Loading...</div>`;
+      try{
+        const res = await apiFetch(API_BASE + "/api/orders/my", {}, 20000);
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to load orders");
+
+        const orders = Array.isArray(json) ? json : (json.orders || []);
+        if(orders.length === 0){
+          box.innerHTML = `<div class="empty">No orders yet.</div>`;
+          return;
+        }
+
+        box.innerHTML = orders.map(o => {
+          const items = (o.items||[]).map(i=>{
+            const lineTotal = (Number(i.price)||0) * (Number(i.qty)||1);
+            return `
+              <div class="orderItem">
+                <div class="orderThumb">${imgTag(i.image||"", i.name)}</div>
+                <div class="orderInfo">
+                  <b>${escapeHtml(i.name||"")}</b>
+                  <div class="sub">Qty: ${Number(i.qty)||1} • ${money(i.price)} ETB</div>
+                </div>
+                <div class="orderPrice">${money(lineTotal)} ETB</div>
+              </div>
+            `;
+          }).join("");
+
+          return `
+            <div class="admin-box" style="margin-top:12px">
+              <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
+                <div>
+                  <div style="font-weight:1000">Order: ${escapeHtml(o.orderId||"")}</div>
+                  <div class="sub">Status: ${escapeHtml(o.status||"placed")} • Payment: ${escapeHtml(o.payment?.method||"")} (${escapeHtml(o.payment?.status||"pending")})</div>
+                  <div class="sub">Placed: ${new Date(o.createdAt).toLocaleString()}</div>
+                </div>
+                <div style="font-weight:1000;font-size:1.1rem">${money(o.total)} ETB</div>
+              </div>
+              <div class="orderItems">${items}</div>
+            </div>
+          `;
+        }).join("");
+      }catch(e){
+        box.innerHTML = `<div class="empty" style="border-color:rgba(255,69,58,.3);color:#ffb3ad">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    // ---------- ADMIN ----------
+    const getAdminKey = ()=> localStorage.getItem(ADMIN_KEY_STORAGE) || "";
+    function setAdminKey(){
+      const k = prompt("Enter ADMIN_API_KEY:");
+      if(!k) return;
+      localStorage.setItem(ADMIN_KEY_STORAGE, k.trim());
+      toast("Admin key saved","Admin access enabled on this device.");
+      loadAdminOrders();
+    }
+    function logoutAdmin(){
+      localStorage.removeItem(ADMIN_KEY_STORAGE);
+      toast("Admin logged out","Admin key removed from this device.");
+      loadAdminOrders();
+    }
+
+    // ---------- ADMIN PRODUCTS ----------
+    function renderAdminProducts(){
+      const list = $("productList");
+      if(products.length === 0){
+        list.innerHTML = `<div class="empty">No products yet.</div>`;
+        return;
+      }
+      list.innerHTML = products.map(p=>`
+        <div class="item">
+          <div class="thumb">${imgTag(p.image||"", p.name)}</div>
+          <div class="it-mid">
+            <b>${escapeHtml(p.name||"")}</b>
+            <div class="sub">${escapeHtml(p.category||"")} • ${escapeHtml(p.gender||"")} • ${money(p.price)} ETB</div>
+          </div>
+          <div class="it-actions">
+            <button class="btn btn-ghost sm" onclick="openEdit('${String(p.id).replaceAll("'","")}')">Edit</button>
+            <button class="btn danger sm" onclick="deleteProduct('${String(p.id).replaceAll("'","")}')">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    $("imageInput").addEventListener("change", (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      const r = new FileReader();
+      r.onload = (ev)=>{
+        $("imagePreview").src = ev.target.result;
+        $("imagePreview").style.display = "block";
+      };
+      r.readAsDataURL(f);
+    });
+
+    $("productForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const adminKey = getAdminKey();
+      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
+
+      const file = $("imageInput").files[0];
+      if(!file) return toast("Image required","Please select a product image.","error");
+      if(file.size > 2*1024*1024) return toast("Image too large","Max 2MB allowed.","error");
+
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("name", $("productName").value.trim());
+      fd.append("description", $("productDescription").value.trim());
+      fd.append("category", $("productCategory").value);
+      fd.append("gender", $("productGender").value);
+      fd.append("price", $("productPrice").value);
+
+      $("adminMsg").textContent = "Uploading...";
+      $("addBtn").disabled = true;
+
+      try{
+        showLoading("Uploading product...","Please wait.");
+        const res = await fetchWithTimeout(API_BASE + "/api/products",{
+          method:"POST",
+          headers:{ "x-admin-key": adminKey },
+          body: fd
+        }, 25000);
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to add product");
+
+        $("adminMsg").textContent = "Saved ✅ Product added successfully.";
+        e.target.reset();
+        $("imagePreview").style.display = "none";
+
+        await loadProducts();
+        resetShopFiltersToAll();
+        showShop();
+        scrollToProducts();
+        toast("Product added","Your product is now visible in the shop.");
+      }catch(err){
+        $("adminMsg").textContent = "Error: " + err.message;
+        toast("Upload failed", err.message, "error");
+      }finally{
+        $("addBtn").disabled = false;
+        hideLoading();
+      }
+    });
+
+    function openEdit(id){
+      const p = products.find(x=> String(x.id)===String(id));
+      if(!p) return toast("Not found","Product not found.","error");
+
+      $("editMsg").textContent = "";
+      $("editId").value = p.id;
+      $("editName").value = p.name || "";
+      $("editPrice").value = Number(p.price)||0;
+      $("editDesc").value = p.description || "";
+      $("editCat").value = p.category || "bridal";
+      $("editGen").value = p.gender || "women";
+
+      $("editPrev").style.display = p.image ? "block" : "none";
+      if(p.image) $("editPrev").src = p.image;
+      $("editImg").value = "";
+      $("editModal").classList.remove("hidden");
+    }
+    function closeEdit(){ $("editModal").classList.add("hidden"); }
+
+    $("editImg").addEventListener("change",(e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      const r = new FileReader();
+      r.onload = (ev)=>{
+        $("editPrev").src = ev.target.result;
+        $("editPrev").style.display = "block";
+      };
+      r.readAsDataURL(f);
+    });
+
+    async function saveEdit(){
+      const adminKey = getAdminKey();
+      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
+
+      const id = $("editId").value;
+      const name = $("editName").value.trim();
+      const price = $("editPrice").value;
+      const description = $("editDesc").value.trim();
+      const category = $("editCat").value;
+      const gender = $("editGen").value;
+      const file = $("editImg").files[0];
+
+      if(!name) return $("editMsg").textContent = "Name is required";
+      if(!price) return $("editMsg").textContent = "Price is required";
+      if(file && file.size > 2*1024*1024) return $("editMsg").textContent = "Image max 2MB";
+
+      const fd = new FormData();
+      fd.append("name", name);
+      fd.append("price", price);
+      fd.append("description", description);
+      fd.append("category", category);
+      fd.append("gender", gender);
+      if(file) fd.append("image", file);
+
+      try{
+        showLoading("Saving changes...","Please wait.");
+        const res = await fetchWithTimeout(API_BASE + "/api/products/" + encodeURIComponent(id),{
+          method:"PUT",
+          headers:{ "x-admin-key": adminKey },
+          body: fd
+        }, 25000);
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Update failed");
+
+        closeEdit();
+        await loadProducts();
+        toast("Saved","Product updated successfully.");
+      }catch(e){
+        $("editMsg").textContent = e.message;
+        toast("Update failed", e.message, "error");
+      }finally{
+        hideLoading();
+      }
+    }
+
+    async function deleteProduct(id){
+      if(!confirm("Delete this product?")) return;
+      const adminKey = getAdminKey();
+      if(!adminKey) return toast("Admin key missing","Click Set Admin Key first.","error");
+
+      try{
+        showLoading("Deleting product...","Please wait.");
+        const res = await fetchWithTimeout(API_BASE + "/api/products/" + encodeURIComponent(id),{
+          method:"DELETE",
+          headers:{ "x-admin-key": adminKey }
+        }, 20000);
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Delete failed");
+        await loadProducts();
+        toast("Deleted","Product removed successfully.");
+      }catch(e){
+        toast("Delete failed", e.message, "error");
+      }finally{
+        hideLoading();
+      }
+    }
+
+    // ---------- ADMIN ORDERS ----------
+    async function loadAdminOrders(){
+      const k = getAdminKey();
+      const box = $("adminOrders");
+      if(!k){
+        box.innerHTML = `<div class="empty">Admin key not set. Click “Set Admin Key”.</div>`;
+        return;
+      }
+      box.innerHTML = `<div class="empty">Loading orders...</div>`;
+
+      try{
+        const res = await fetchWithTimeout(API_BASE + "/api/admin/orders",{ headers:{ "x-admin-key": k } }, 25000);
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Failed to load admin orders");
+
+        const orders = Array.isArray(json) ? json : (json.orders || []);
+        if(orders.length === 0){
+          box.innerHTML = `<div class="empty">No orders yet.</div>`;
+          return;
+        }
+
+        box.innerHTML = orders.map(o=>{
+          const dbKey = String(o._id || o.id || o.orderId);
+          const orderKey = String(o.orderId || "");
+          const items = (o.items||[]).map(i=>{
+            const lineTotal = (Number(i.price)||0) * (Number(i.qty)||1);
+            return `
+              <div class="orderItem">
+                <div class="orderThumb">${imgTag(i.image||"", i.name)}</div>
+                <div class="orderInfo">
+                  <b>${escapeHtml(i.name||"")}</b>
+                  <div class="sub">Qty: ${Number(i.qty)||1} • ${money(i.price)} ETB</div>
+                </div>
+                <div class="orderPrice">${money(lineTotal)} ETB</div>
+              </div>
+            `;
+          }).join("");
+
+          const custEmail = (o.customer?.email||"").trim();
+
+          return `
+            <div class="admin-box">
+              <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                <div>
+                  <div style="font-weight:1000">Order: ${escapeHtml(o.orderId||"")}</div>
+                  <div class="sub">Customer: ${escapeHtml(o.customer?.fullName||"")} • ${escapeHtml(o.customer?.phone||"")}</div>
+                  <div class="sub">Email: ${custEmail ? escapeHtml(custEmail) : "<span style='color:#ffb3ad'>Missing</span>"}</div>
+                  <div class="sub">Address: ${escapeHtml(o.customer?.address||"")}</div>
+                </div>
+                <div style="font-weight:1000">${money(o.total)} ETB</div>
+              </div>
+
+              <div class="hr"></div>
+              <div class="sub"><b>Status:</b> ${escapeHtml(o.status||"placed")} • <b>Payment:</b> ${escapeHtml(o.payment?.method||"")} (${escapeHtml(o.payment?.status||"pending")})</div>
+              <div class="sub">Placed: ${new Date(o.createdAt).toLocaleString()}</div>
+
+              <div class="orderItems">${items}</div>
+
+              <div class="hr"></div>
+
+              <div class="row">
+                <select id="st_${dbKey}">
+                  <option value="placed" ${o.status==="placed"?"selected":""}>placed</option>
+                  <option value="processing" ${o.status==="processing"?"selected":""}>processing</option>
+                  <option value="delivered" ${o.status==="delivered"?"selected":""}>delivered</option>
+                  <option value="cancelled" ${o.status==="cancelled"?"selected":""}>cancelled</option>
+                </select>
+
+                <select id="pay_${dbKey}">
+                  <option value="pending" ${(o.payment?.status||"pending")==="pending"?"selected":""}>pending</option>
+                  <option value="paid" ${(o.payment?.status||"pending")==="paid"?"selected":""}>paid</option>
+                  <option value="failed" ${(o.payment?.status||"pending")==="failed"?"selected":""}>failed</option>
+                </select>
+              </div>
+
+              <div class="actions" style="margin-top:10px">
+                <button class="btn ok sm" onclick="adminUpdateOrder('${orderKey}','${dbKey}')">Save Update</button>
+
+                <!-- ✅ PASS customer email -->
+                <button class="btn warnBtn sm"
+                  onclick="openMail(
+                    '${orderKey}',
+                    '${escapeHtml(o.orderId||"")}',
+                    '${escapeHtml(o.status||"placed")}',
+                    '${escapeHtml(o.payment?.status||"pending")}',
+                    '${escapeHtml(custEmail||"")}'
+                  )">Email Customer</button>
+              </div>
+
+              <div class="note" id="msg_${dbKey}"></div>
+            </div>
+          `;
+        }).join("");
+      }catch(e){
+        box.innerHTML = `<div class="empty" style="border-color:rgba(255,69,58,.3);color:#ffb3ad">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    async function adminUpdateOrder(orderId, dbKey){
+      const k = getAdminKey();
+      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
+
+      const status = $("st_" + dbKey).value;
+      const paymentStatus = $("pay_" + dbKey).value;
+      const msg = $("msg_" + dbKey);
+      msg.textContent = "Saving...";
+
+      try{
+        showLoading("Updating order...","Please wait.");
+        const res = await fetchWithTimeout(API_BASE + "/api/admin/orders/" + encodeURIComponent(orderId),{
+          method:"PUT",
+          headers:{
+            "Content-Type":"application/json",
+            "x-admin-key": k
+          },
+          body: JSON.stringify({ status, paymentStatus })
+        }, 20000);
+        const { text, json } = await readJsonSafe(res);
+        if(!res.ok) throw new Error(json?.error || json?.details || text || "Update failed");
+        msg.textContent = "✅ Updated successfully.";
+        toast("Order updated","Changes saved successfully.");
+        await loadAdminOrders();
+      }catch(e){
+        msg.textContent = "❌ " + e.message;
+        toast("Update failed", e.message, "error");
+      }finally{
+        hideLoading();
+      }
+    }
+
+    // ✅ UPDATED: includes customerEmail and disables send if missing
+    function openMail(orderId, orderIdText, status, payStatus, customerEmail){
+      $("mailDbId").value = orderId;
+      $("mailMsg").textContent = "";
+
+      const email = String(customerEmail || "").trim();
+      $("mailSub").innerHTML = email
+        ? `Send a professional update message to <b>${escapeHtml(email)}</b>.`
+        : `Customer email is <b style="color:#ffb3ad">missing</b>. Add email on checkout to enable updates.`;
+
+      $("mailSubject").value = `Sena Fashion — Order Update (${orderIdText})`;
+      $("mailMessage").value =
+`Hello,
+
+We’re reaching out with an update on your Sena Fashion order.
+
+Order ID: ${orderIdText}
+Status: ${status}
+Payment Status: ${payStatus}
+
+If you have any questions or need help, please reply to this email and we’ll assist you right away.
+
+Thank you for choosing Sena Fashion,
+Sena Fashion Support Team`;
+
+      // Disable send if missing email
+      const sendBtn = $("mailSendBtn");
+      sendBtn.disabled = !email;
+      sendBtn.title = email ? "" : "Customer email is missing. Cannot send.";
+
+      $("mailModal").classList.remove("hidden");
+    }
+
+    function closeMail(){ $("mailModal").classList.add("hidden"); }
+
+    // ✅ UPDATED: friendly message if Render email env missing
+    async function sendCustomerEmail(){
+      const k = getAdminKey();
+      if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
+
+      const orderId = $("mailDbId").value;
+      const subject = $("mailSubject").value.trim();
+      const message = $("mailMessage").value.trim();
+
+      if(!subject) return $("mailMsg").textContent = "Subject is required.";
+      if(!message) return $("mailMsg").textContent = "Message is required.";
+
+      $("mailMsg").textContent = "Sending...";
+
+      try{
+        showLoading("Sending email...","Please wait.");
+        const res = await fetchWithTimeout(API_BASE + "/api/admin/orders/" + encodeURIComponent(orderId) + "/email",{
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+            "x-admin-key": k
+          },
+          body: JSON.stringify({ subject, message })
+        }, 25000);
+
+        const { text, json } = await readJsonSafe(res);
+        const rawMsg = (json?.error || json?.details || json?.message || text || "").toString();
+
+        const looksLikeEmailConfig =
+          /email not configured|missing gmail|gmail_user|gmail_app_password|nodemailer|invalid login|auth/i.test(rawMsg);
+
+        if(!res.ok){
+          if(looksLikeEmailConfig){
+            $("mailMsg").innerHTML =
+              "❌ Email is not configured on the server.<br>" +
+              "Fix on Render environment variables:<br>" +
+              "<b>GMAIL_USER</b> and <b>GMAIL_APP_PASSWORD</b> (Gmail App Password).<br><br>" +
+              "Server says: " + escapeHtml(rawMsg || "Email not configured.");
+            toast("Email not configured","Add GMAIL_USER + GMAIL_APP_PASSWORD on Render, then redeploy.","error", 7000);
+            return;
+          }
+          throw new Error(rawMsg || "Email failed");
+        }
+
+        $("mailMsg").textContent = "✅ Email sent successfully.";
+        toast("Email sent","Customer has been notified.");
+      }catch(e){
+        $("mailMsg").textContent = "❌ " + (e.message || "Email failed");
+        toast("Email failed", e.message || "Email failed", "error");
+      }finally{
+        hideLoading();
+      }
+    }
+
+    // ---------- EDIT PRODUCT MODAL close helpers ----------
+    function closeEdit(){ $("editModal").classList.add("hidden"); }
+
+    // ---------- INIT ----------
+    document.addEventListener("DOMContentLoaded", ()=>{
+      $("yy").textContent = new Date().getFullYear();
+      $("yy2").textContent = new Date().getFullYear();
+      updateCartCount();
+      updateAuthUI();
+      loadProducts();
+      renderCart();
+    });
+  </script>
+</body>
+</html>
