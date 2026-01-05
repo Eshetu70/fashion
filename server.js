@@ -1,11 +1,10 @@
 /**
- * server.js ✅ FULL UPDATED (Sena Fashion) — 2026-01-04 FIXED
+ * server.js ✅ FULL UPDATED (Sena Fashion) — 2026-01-05
  * Fixes:
- * ✅ JWT_SECRET newline / double-line issues on Render (sanitized)
- * ✅ Checkout spinning / slow response (email sent async, not blocking order)
- * ✅ Adds missing routes your frontend calls: /api/admin/ping, /api/admin/test-email
- * ✅ CORS allow GitHub Pages + local + Render
- * ✅ Uploads + absolute URL helpers
+ * ✅ CORS supports: GitHub Pages + senafashions.com + www
+ * ✅ Adds /api/health to debug production quickly
+ * ✅ Better error outputs (CORS + products)
+ * ✅ Uploads remain public + cross-origin safe
  *
  * npm i express cors mongoose multer bcryptjs jsonwebtoken nodemailer dotenv
  */
@@ -49,14 +48,12 @@ const {
   OWNER_EMAIL,
   PUBLIC_BASE_URL,
 
-  // Optional: set your GitHub pages origin explicitly
+  // Optional: your GitHub pages origin explicitly
   GITHUB_PAGES_ORIGIN, // e.g. https://eshetu70.github.io
 } = process.env;
 
 // ✅ Hard-fix: Render paste/newline/space issues
-const JWT_SECRET = String(JWT_SECRET_RAW || "")
-  .replace(/\s+/g, "") // removes ALL whitespace: spaces/newlines/tabs
-  .trim();
+const JWT_SECRET = String(JWT_SECRET_RAW || "").replace(/\s+/g, "").trim();
 
 console.log("🔐 JWT_SECRET length:", JWT_SECRET.length);
 
@@ -73,35 +70,71 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
   process.exit(1);
 }
 
-// ---------------- CORS (GitHub Pages + local + Render) ----------------
-// You can add more origins here if needed.
+// ---------------- BODY PARSERS ----------------
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+
+// ---------------- CORS ----------------
+// ✅ IMPORTANT: Add your custom domain here
 const allowedOrigins = [
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
-  "https://eshetu70.github.io", // your common GitHub pages
+
+  // GitHub Pages
+  "https://eshetu70.github.io",
+
+  // ✅ Custom domain (MOST IMPORTANT)
+  "https://senafashions.com",
+  "https://www.senafashions.com",
 ].filter(Boolean);
 
 if (GITHUB_PAGES_ORIGIN) allowedOrigins.push(String(GITHUB_PAGES_ORIGIN).trim());
 
+// Optional: allow any GitHub Pages origin for your username
+function isAllowed(origin) {
+  if (!origin) return true; // Postman, server-to-server
+
+  try {
+    const u = new URL(origin);
+    const host = u.hostname.toLowerCase();
+    const proto = u.protocol;
+
+    // only allow https for production sites
+    const isHttps = proto === "https:";
+
+    // allow exact list
+    if (allowedOrigins.includes(origin)) return true;
+
+    // allow GitHub Pages under your username (optional helper)
+    if (isHttps && host === "eshetu70.github.io") return true;
+
+    // allow your domain + subdomain www
+    if (isHttps && (host === "senafashions.com" || host === "www.senafashions.com")) return true;
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 app.use(
   cors({
     origin: (origin, cb) => {
-      // allow no-origin requests (Postman/server-to-server)
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
+      if (isAllowed(origin)) return cb(null, true);
+      console.error("❌ CORS blocked:", origin);
       return cb(new Error("CORS blocked: " + origin));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-admin-key"],
   })
 );
+
+// ✅ Preflight (fix for path-to-regexp error)
 app.options(/.*/, cors());
 
-// Body parsers
-app.use(express.json({ limit: "15mb" }));
-app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 // ---------------- UPLOADS ----------------
 const UPLOAD_DIR = path.join(__dirname, "uploads");
@@ -121,10 +154,7 @@ app.use(
 
 // ---------------- MONGO ----------------
 mongoose
-  .connect(MONGODB_URI, {
-    // keeps Render stable
-    serverSelectionTimeoutMS: 10000,
-  })
+  .connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => {
     console.error("❌ MongoDB error:", err.message);
@@ -198,6 +228,7 @@ function baseUrlFromReq(req) {
   const host = req.get("host");
   return `${proto}://${host}`;
 }
+
 function toAbsoluteUrl(req, maybeUrlOrPath) {
   if (!maybeUrlOrPath) return "";
   const v = String(maybeUrlOrPath);
@@ -206,6 +237,7 @@ function toAbsoluteUrl(req, maybeUrlOrPath) {
   if (v.startsWith("/")) return `${base}${v}`;
   return `${base}/${v}`;
 }
+
 function safeJsonParse(input, fallback) {
   try {
     if (typeof input === "string") return JSON.parse(input);
@@ -214,9 +246,11 @@ function safeJsonParse(input, fallback) {
     return fallback;
   }
 }
+
 function makeOrderId() {
   return `SF-${Date.now()}-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
 }
+
 function escapeHtml(str) {
   return String(str || "")
     .replaceAll("&", "&amp;")
@@ -226,11 +260,13 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+// ---------------- AUTH MIDDLEWARE ----------------
 function requireAdmin(req, res, next) {
   const key = req.headers["x-admin-key"];
   if (!key || key !== ADMIN_API_KEY) return res.status(401).json({ error: "Unauthorized (admin key required)" });
   next();
 }
+
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
@@ -240,7 +276,7 @@ function requireAuth(req, res, next) {
     const decoded = jwt.verify(String(token).trim(), JWT_SECRET);
     req.user = decoded;
     next();
-  } catch (e) {
+  } catch {
     return res.status(401).json({ error: "Invalid token" });
   }
 }
@@ -300,8 +336,7 @@ function buildCustomerEmailHtml({ customerName, orderId, items, total, status, p
         <td style="padding:10px;border-bottom:1px solid #eee;">${escapeHtml(it.name)}</td>
         <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${Number(it.qty || 0)}</td>
         <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">ETB ${Number(it.price || 0).toFixed(0)}</td>
-      </tr>
-    `
+      </tr>`
     )
     .join("");
 
@@ -335,35 +370,28 @@ function buildCustomerEmailHtml({ customerName, orderId, items, total, status, p
         </tfoot>
       </table>
 
-      <p style="margin:16px 0 0;color:#444;">
-        If you have any questions, reply to this email and we will help you.
-      </p>
-
-      <p style="margin:14px 0 0;color:#777;font-size:13px;">
-        Thank you for shopping with <b>Sena Fashion</b>.
-      </p>
+      <p style="margin:16px 0 0;color:#444;">If you have any questions, reply to this email and we will help you.</p>
+      <p style="margin:14px 0 0;color:#777;font-size:13px;">Thank you for shopping with <b>Sena Fashion</b>.</p>
     </div>
   </div>`;
 }
 
 async function sendCustomerEmail({ to, subject, html, text }) {
   const transporter = await createTransporter();
-  if (!transporter) {
-    return { ok: false, skipped: true, message: "Email not configured (missing SMTP or Gmail env vars)." };
-  }
-  const mail = {
+  if (!transporter) return { ok: false, skipped: true, message: "Email not configured (missing SMTP or Gmail env vars)." };
+
+  await transporter.sendMail({
     from: getMailFrom(),
     to,
     subject,
     text: text || "Sena Fashion — Order update",
     html,
     replyTo: OWNER_EMAIL || undefined,
-  };
-  await transporter.sendMail(mail);
+  });
+
   return { ok: true };
 }
 
-// ✅ Critical fix: email should never block API response
 function sendEmailInBackground(fn) {
   setImmediate(async () => {
     try {
@@ -377,6 +405,17 @@ function sendEmailInBackground(fn) {
 // ---------------- ROUTES ----------------
 app.get("/", (req, res) => {
   res.json({ ok: true, app: "Sena Fashion API", time: new Date().toISOString() });
+});
+
+// ✅ NEW: Health check (use this to verify Render is alive + see origin)
+app.get("/api/health", (req, res) => {
+  res.json({
+    ok: true,
+    app: "Sena Fashion API",
+    time: new Date().toISOString(),
+    origin: req.headers.origin || null,
+    host: req.get("host"),
+  });
 });
 
 // ✅ Used by your frontend "Test Admin"
@@ -426,7 +465,6 @@ app.post("/api/auth/register", async (req, res) => {
     const user = await User.create({ fullName: String(fullName).trim(), email: cleanEmail, passwordHash });
 
     const token = jwt.sign({ userId: String(user._id), email: user.email }, JWT_SECRET, { expiresIn: "30d" });
-
     res.json({ ok: true, token, user: { id: String(user._id), fullName: user.fullName, email: user.email } });
   } catch (e) {
     res.status(500).json({ error: "Register failed", details: e.message });
@@ -468,7 +506,13 @@ app.get("/api/products", async (req, res) => {
     const products = await Product.find(filter).sort({ createdAt: -1 }).lean();
     res.json({ ok: true, products });
   } catch (e) {
-    res.status(500).json({ error: "Failed to load products", details: e.message });
+    console.error("❌ /api/products failed:", e);
+    res.status(500).json({
+      ok: false,
+      error: "Failed to load products",
+      details: e.message,
+      hint: "Check MongoDB connection + collection name + CORS origin",
+    });
   }
 });
 
@@ -476,10 +520,8 @@ app.get("/api/products", async (req, res) => {
 app.post("/api/products", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const body = req.body || {};
-    const name = body.name;
+    const { name, category, gender } = body;
     const description = body.description || "";
-    const category = body.category;
-    const gender = body.gender;
     const price = Number(body.price);
 
     if (!name || !category || !gender || Number.isNaN(price)) {
@@ -620,10 +662,9 @@ app.post("/api/orders", requireAuth, upload.single("proof"), async (req, res) =>
       status: "placed",
     });
 
-    // ✅ Respond immediately (no waiting on email)
     res.json({ ok: true, order: { orderId: order.orderId, total: order.total, status: order.status, createdAt: order.createdAt } });
 
-    // ✅ Email owner in background (never blocks checkout)
+    // background owner email
     if (OWNER_EMAIL) {
       sendEmailInBackground(async () => {
         const html = buildCustomerEmailHtml({
@@ -737,6 +778,19 @@ app.post("/api/admin/orders/:orderId/email", requireAdmin, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: "Failed to email customer", details: e.message });
   }
+});
+
+// ---------------- ERROR HANDLER (VERY USEFUL) ----------------
+app.use((err, req, res, next) => {
+  const msg = String(err?.message || "Server error");
+  console.error("❌ Error:", msg);
+
+  // Make CORS issues visible (instead of silent)
+  if (msg.startsWith("CORS blocked:")) {
+    return res.status(403).json({ ok: false, error: msg });
+  }
+
+  return res.status(500).json({ ok: false, error: "Server error", details: msg });
 });
 
 // ---------------- START ----------------
