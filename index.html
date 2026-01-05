@@ -5,6 +5,10 @@
      - Disable Send if customer email missing
      - Show clear “Email not configured on server” message (Render env missing)
      - Stronger error parsing + better feedback (timeouts, server errors)
+
+  ✅ Footer updated with:
+     Email: senafikadu8@gmail.com
+     Phone: +251943578957
 -->
 
 <!DOCTYPE html>
@@ -23,15 +27,11 @@
   <meta name="theme-color" content="#0b0f14" />
   <link rel="manifest" href="/site.webmanifest" />
 
-  <!-- ✅ Favicons -->
-
-<!-- ✅ Favicons (assets-only setup) -->
-<link rel="icon" href="/fashion/assets/favicon.ico" sizes="any">
-<link rel="shortcut icon" href="/fashion/assets/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="/fashion/assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/fashion/assets/apple-touch-icon.png">
-
-
+  <!-- ✅ Favicons (assets-only setup) -->
+  <link rel="icon" href="/fashion/assets/favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="/fashion/assets/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fashion/assets/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/fashion/assets/apple-touch-icon.png">
 
   <!-- ✅ Canonical (IMPORTANT for SEO) -->
   <link rel="canonical" href="https://fashion-2tif.onrender.com/" />
@@ -58,6 +58,7 @@
 
   <!-- ✅ Optional: Better previews on some platforms -->
   <meta property="og:image:alt" content="Sena Fashion — Modern • Cultural • Premium" />
+
   <style>
     :root{
       --bg:#0b0f14;
@@ -552,6 +553,23 @@
       color:rgba(255,255,255,.7);
       text-align:center;
     }
+    .footerLinks{
+      margin-top:8px;
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      flex-wrap:wrap;
+      font-weight:900;
+      color:rgba(255,255,255,.80);
+    }
+    .footerLinks a{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      padding:.45rem .7rem;
+      border-radius:999px;
+      transition:.15s;
+    }
+    .footerLinks a:hover{background:rgba(255,255,255,.06);transform:translateY(-1px)}
 
     /* Toast */
     .toastWrap{
@@ -1078,7 +1096,13 @@
     </div>
   </div>
 
-  <footer>© <span id="yy"></span> Sena Fashion. All rights reserved.</footer>
+  <footer>
+    © <span id="yy"></span> Sena Fashion. All rights reserved.
+    <div class="footerLinks">
+      <a href="mailto:senafikadu8@gmail.com">📧 senafikadu8@gmail.com</a>
+      <a href="tel:+251943578957">📞 +251943578957</a>
+    </div>
+  </footer>
 
   <script>
     // ---------- CONFIG ----------
@@ -2109,9 +2133,6 @@ Sena Fashion Support Team`;
         hideLoading();
       }
     }
-
-    // ---------- EDIT PRODUCT MODAL close helpers ----------
-    function closeEdit(){ $("editModal").classList.add("hidden"); }
 
     // ---------- INIT ----------
     document.addEventListener("DOMContentLoaded", ()=>{
