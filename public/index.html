@@ -1,10 +1,10 @@
-<!-- index.html ✅ FULL UPDATED FRONTEND (Sena Fashion) — FAST UX/UI FIX
-  Fixes your issue:
-  ✅ Place Order no longer “keeps rotating” forever (adds request timeout + safe cleanup)
-  ✅ Cart clears immediately after SUCCESS (and UI count updates)
-  ✅ Prevents double-click / duplicate orders (locks button while sending)
-  ✅ Better error messages + always hides loading overlay
-  ✅ Uses JSON (faster) when no Telebirr proof; uses FormData only when proof exists
+<!-- index.html ✅ FULL UPDATED FRONTEND (Sena Fashion) — EMAIL FIX INCLUDED
+  ✅ Same UI/UX you posted
+  ✅ Adds the missing frontend changes so Email Customer works correctly with your Render backend:
+     - Pass customer email into openMail()
+     - Disable Send if customer email missing
+     - Show clear “Email not configured on server” message (Render env missing)
+     - Stronger error parsing + better feedback (timeouts, server errors)
 -->
 
 <!DOCTYPE html>
@@ -300,7 +300,6 @@
       display:flex;align-items:center;justify-content:center;
       overflow:hidden;
       position:relative;
-
       backface-visibility:hidden;
       -webkit-backface-visibility:hidden;
       transform: translateZ(0);
@@ -312,7 +311,6 @@
       object-fit:cover;
       display:block;
       background:rgba(255,255,255,.04);
-
       backface-visibility:hidden;
       -webkit-backface-visibility:hidden;
       transform: translateZ(0);
@@ -985,7 +983,7 @@
       <textarea id="mailMessage" rows="7" placeholder="Write message..."></textarea>
 
       <div class="actions" style="margin-top:12px">
-        <button class="btn btn-primary" onclick="sendCustomerEmail()">Send Email</button>
+        <button class="btn btn-primary" id="mailSendBtn" onclick="sendCustomerEmail()">Send Email</button>
         <button class="btn btn-ghost" onclick="closeMail()">Cancel</button>
       </div>
       <div class="note" id="mailMsg"></div>
@@ -1927,7 +1925,16 @@
 
               <div class="actions" style="margin-top:10px">
                 <button class="btn ok sm" onclick="adminUpdateOrder('${orderKey}','${dbKey}')">Save Update</button>
-                <button class="btn warnBtn sm" onclick="openMail('${orderKey}','${escapeHtml(o.orderId||"")}','${escapeHtml(o.status||"placed")}','${escapeHtml(o.payment?.status||"pending")}')">Email Customer</button>
+
+                <!-- ✅ PASS customer email -->
+                <button class="btn warnBtn sm"
+                  onclick="openMail(
+                    '${orderKey}',
+                    '${escapeHtml(o.orderId||"")}',
+                    '${escapeHtml(o.status||"placed")}',
+                    '${escapeHtml(o.payment?.status||"pending")}',
+                    '${escapeHtml(custEmail||"")}'
+                  )">Email Customer</button>
               </div>
 
               <div class="note" id="msg_${dbKey}"></div>
@@ -1971,9 +1978,16 @@
       }
     }
 
-    function openMail(orderId, orderIdText, status, payStatus){
+    // ✅ UPDATED: includes customerEmail and disables send if missing
+    function openMail(orderId, orderIdText, status, payStatus, customerEmail){
       $("mailDbId").value = orderId;
       $("mailMsg").textContent = "";
+
+      const email = String(customerEmail || "").trim();
+      $("mailSub").innerHTML = email
+        ? `Send a professional update message to <b>${escapeHtml(email)}</b>.`
+        : `Customer email is <b style="color:#ffb3ad">missing</b>. Add email on checkout to enable updates.`;
+
       $("mailSubject").value = `Sena Fashion — Order Update (${orderIdText})`;
       $("mailMessage").value =
 `Hello,
@@ -1988,11 +2002,18 @@ If you have any questions or need help, please reply to this email and we’ll a
 
 Thank you for choosing Sena Fashion,
 Sena Fashion Support Team`;
+
+      // Disable send if missing email
+      const sendBtn = $("mailSendBtn");
+      sendBtn.disabled = !email;
+      sendBtn.title = email ? "" : "Customer email is missing. Cannot send.";
+
       $("mailModal").classList.remove("hidden");
     }
 
     function closeMail(){ $("mailModal").classList.add("hidden"); }
 
+    // ✅ UPDATED: friendly message if Render email env missing
     async function sendCustomerEmail(){
       const k = getAdminKey();
       if(!k) return toast("Admin key missing","Click Set Admin Key first.","error");
@@ -2000,6 +2021,9 @@ Sena Fashion Support Team`;
       const orderId = $("mailDbId").value;
       const subject = $("mailSubject").value.trim();
       const message = $("mailMessage").value.trim();
+
+      if(!subject) return $("mailMsg").textContent = "Subject is required.";
+      if(!message) return $("mailMsg").textContent = "Message is required.";
 
       $("mailMsg").textContent = "Sending...";
 
@@ -2013,17 +2037,38 @@ Sena Fashion Support Team`;
           },
           body: JSON.stringify({ subject, message })
         }, 25000);
+
         const { text, json } = await readJsonSafe(res);
-        if(!res.ok) throw new Error(json?.error || json?.details || text || "Email failed");
+        const rawMsg = (json?.error || json?.details || json?.message || text || "").toString();
+
+        const looksLikeEmailConfig =
+          /email not configured|missing gmail|gmail_user|gmail_app_password|nodemailer|invalid login|auth/i.test(rawMsg);
+
+        if(!res.ok){
+          if(looksLikeEmailConfig){
+            $("mailMsg").innerHTML =
+              "❌ Email is not configured on the server.<br>" +
+              "Fix on Render environment variables:<br>" +
+              "<b>GMAIL_USER</b> and <b>GMAIL_APP_PASSWORD</b> (Gmail App Password).<br><br>" +
+              "Server says: " + escapeHtml(rawMsg || "Email not configured.");
+            toast("Email not configured","Add GMAIL_USER + GMAIL_APP_PASSWORD on Render, then redeploy.","error", 7000);
+            return;
+          }
+          throw new Error(rawMsg || "Email failed");
+        }
+
         $("mailMsg").textContent = "✅ Email sent successfully.";
         toast("Email sent","Customer has been notified.");
       }catch(e){
-        $("mailMsg").textContent = "❌ " + e.message;
-        toast("Email failed", e.message, "error");
+        $("mailMsg").textContent = "❌ " + (e.message || "Email failed");
+        toast("Email failed", e.message || "Email failed", "error");
       }finally{
         hideLoading();
       }
     }
+
+    // ---------- EDIT PRODUCT MODAL close helpers ----------
+    function closeEdit(){ $("editModal").classList.add("hidden"); }
 
     // ---------- INIT ----------
     document.addEventListener("DOMContentLoaded", ()=>{
